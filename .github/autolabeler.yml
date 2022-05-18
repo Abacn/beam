@@ -28,6 +28,7 @@ kotlin: ["examples/kotlin/**/*"]
 learning: ["learning/**/*"]
 model: ["model/**/*"]
 python: ["sdks/python/**/*"]
+typescript: ["sdks/typescript/**/*"]
 vendor: ["vendor/**/*"]
 website: ["website/**/*"]
 
@@ -45,7 +46,7 @@ extensions: ["sdks/java/extensions/**/*"]
 "zetasketch": ["sdks/java/extensions/zetasketch/**/*"]
 
 # IO
-io:  ["sdks/go/pkg/beam/io/**/*", "sdks/java/io/**/*", "sdks/python/apache_beam/io/**/*"]
+io:  ["sdks/go/pkg/beam/io/**/*", "sdks/java/io/**/*", "sdks/python/apache_beam/io/**/*", "sdks/typescript/src/apache_beam/io/**/*"]
 "amqp":  ["sdks/java/io/amqp/**/*"]
 "aws":  ["sdks/java/io/amazon-web-services/**/*", "sdks/java/io/amazon-web-services2/**/*", "sdks/python/apache_beam/io/aws/**/*"]
 "cassandra":  ["sdks/java/io/cassandra/**/*"]
