@@ -22,7 +22,7 @@ import (
 	"github.com/apache/beam/sdks/v2/go/pkg/beam/core/util/reflectx"
 )
 
-// TestClassOf tests that the type classification is correct.
+// TestClassOf test that the type classification is correct.
 func TestClassOf(t *testing.T) {
 	tests := []struct {
 		t   reflect.Type
