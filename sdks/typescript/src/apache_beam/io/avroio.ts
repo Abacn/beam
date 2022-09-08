@@ -24,6 +24,7 @@ import { withCoderInternal } from "../transforms/internal";
 
 export function readFromAvro<T>(
   filePattern: string,
+  // TODO: Allow schema to be inferred.
   options: { schema: Schema }
 ): beam.AsyncPTransform<beam.Root, beam.PCollection<T>> {
   return schemaio<beam.Root, beam.PCollection<T>>(
