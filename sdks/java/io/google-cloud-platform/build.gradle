@@ -195,7 +195,7 @@ task integrationTest(type: Test, dependsOn: processTestResources) {
           "--host=${host}",
   ])
 
-  // Disable Gradle cache: these ITs interact with live service that should always be considered "out of date"
+  // Disable Gradle cache: these ITs interact with live service that should always be considered "out of date".
   outputs.upToDateWhen { false }
 
   include '**/*IT.class'
