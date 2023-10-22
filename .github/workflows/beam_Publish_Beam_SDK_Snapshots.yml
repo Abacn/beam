@@ -52,7 +52,7 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'schedule'
-    runs-on: [self-hosted, ubuntu-20.04, main]
+    runs-on: ubuntu-20.04
     timeout-minutes: 100
     name: ${{ matrix.job_name }} (${{ matrix.container_task }})
     strategy:
@@ -60,7 +60,15 @@ jobs:
       matrix:
         job_name: ["beam_Publish_Beam_SDK_Snapshots"]
         job_phrase: ["N/A"]
-        container_task: ["go:container", "java:container:java8", "java:container:java11", "java:container:java17", "python:container:py38", "python:container:py39", "python:container:py310", "python:container:py311"]
+        container_task:
+          - "go:container"
+          - "java:container:java8"
+          - "java:container:java11"
+          - "java:container:java17"
+          - "python:container:py38"
+          - "python:container:py39"
+          - "python:container:py310"
+          - "python:container:py311"
     steps:
       - uses: actions/checkout@v3
       - name: Setup repository
@@ -97,3 +105,4 @@ jobs:
             -Pjava11Home=$JAVA_HOME_11_X64 \
             -Pdocker-repository-root=gcr.io/apache-beam-testing/beam-sdk \
             -Pdocker-tag-list=${{ github.sha }},latest
+            --dry-run
