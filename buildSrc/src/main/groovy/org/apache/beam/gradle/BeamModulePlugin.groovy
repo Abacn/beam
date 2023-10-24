@@ -970,7 +970,7 @@ class BeamModulePlugin implements Plugin<Project> {
         def java21Home = project.findProperty("java21Home")
         options.fork = true
         options.forkOptions.javaHome = java21Home as File
-        options.compilerArgs += ['-Xlint:-path']
+        options.compilerArgs += ['-Xlint:-path', '-Xlint:-this-escape']
         // Error prone requires some packages to be exported/opened for Java 17+
         // Disabling checks since this property is only used for tests
         options.errorprone.errorproneArgs.add("-XepDisableAllChecks")
@@ -1137,6 +1137,11 @@ class BeamModulePlugin implements Plugin<Project> {
           // TODO(https://github.com/apache/beam/issues/23901): Fix
           // optimizerOuterThis breakage
           options.compilerArgs += ['-XDoptimizeOuterThis=false']
+
+          if (JavaVersion.VERSION_21.compareTo(JavaVersion.current()) <= 0) {
+            // this-escape is a new linter added to Java21, where many generated codes (antlr, etc) not yet suppressed it
+            options.compilerArgs += ['-Xlint:-this-escape']
+          }
         }
         // As we want to add '-Xlint:-deprecation' we intentionally remove '-Xlint:deprecation' from compilerArgs here,
         // as intellij is adding this, see https://youtrack.jetbrains.com/issue/IDEA-196615
