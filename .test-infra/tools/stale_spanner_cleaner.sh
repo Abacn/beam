@@ -26,4 +26,6 @@ gcloud spanner databases list \
 --project $PROJECT \
 --filter="createTime < $(date --iso-8601=s -d '1 day ago')" \
 --format="value(name)" | \
-xargs -I{} gcloud spanner databases delete {} --instance beam-test --quiet
+# exclude persist table
+grep -v "pyspanner_read_" | \
+xargs -I{} gcloud spanner databases delete {} --project $PROJECT --instance beam-test --quiet
