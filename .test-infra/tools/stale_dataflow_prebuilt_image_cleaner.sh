@@ -34,7 +34,7 @@ elif [[ $OSTYPE == "darwin"* ]]; then
   DELETE_BEFORE_PRIVATE=$(date -j -v-3d '+%Y-%m-%dT%H:%M:%S')
 fi
 
-REPOSITORIES=("${PUBLIC_REPOSITORIES[@]/#/gcr.io/apache-beam-testing/}" "${PRIVATE_REPOSITORIES[@]/#/us.gcr.io/apache-beam-testing/}")
+REPOSITORIES=("${PRIVATE_REPOSITORIES[@]/#/us.gcr.io/apache-beam-testing/}" "${PUBLIC_REPOSITORIES[@]/#/gcr.io/apache-beam-testing/}")
 
 echo $REPOSITORIES
 
