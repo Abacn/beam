@@ -52,6 +52,8 @@ import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.Fluent
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.Iterables;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.joda.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** {@link DataflowExecutionContext} for use in batch mode. */
 @SuppressWarnings({
@@ -59,7 +61,7 @@ import org.joda.time.Instant;
 })
 public class BatchModeExecutionContext
     extends DataflowExecutionContext<BatchModeExecutionContext.StepContext> {
-
+  private static final Logger LOG = LoggerFactory.getLogger(BatchModeExecutionContext.class);
   protected final Cache<?, WeightedValue<?>> dataCache;
   protected final Cache<?, ?> logicalReferenceCache;
   protected final PipelineOptions options;
@@ -562,8 +564,13 @@ public class BatchModeExecutionContext
       CounterCell bigqueryReadThrottleTime =
           container.tryGetCounter(
               MetricName.named(BIGQUERY_READ_THROTTLE_TIME_NAMESPACE, THROTTLE_TIME_COUNTER_NAME));
+
       if (bigqueryReadThrottleTime != null) {
-        totalThrottleMsecs += bigqueryReadThrottleTime.getCumulative();
+        long num = bigqueryReadThrottleTime.getCumulative();
+        totalThrottleMsecs += num;
+        LOG.info("{} is {}", BIGQUERY_READ_THROTTLE_TIME_NAMESPACE, num);
+      } else {
+        LOG.info("{} is empty", BIGQUERY_READ_THROTTLE_TIME_NAMESPACE);
       }
 
       CounterCell throttlingMsecs =
