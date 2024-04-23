@@ -301,6 +301,9 @@ public interface BigQueryServices extends Serializable {
     /* This method variant collects request count metric, using the fullTableID metadata. */
     SplitReadStreamResponse splitReadStream(SplitReadStreamRequest request, String fullTableId);
 
+    /** Record throttling time happened to the API call. Default implementation is a no-op. */
+    default void recordThrottlingMsecs(long delay) {}
+
     /**
      * Close the client object.
      *

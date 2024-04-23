@@ -238,7 +238,18 @@ class BigQueryStorageStreamSource<T> extends BoundedSource<T> {
     private synchronized boolean readNextRecord() throws IOException {
       Iterator<ReadRowsResponse> responseIterator = this.responseIterator;
       while (reader.readyForNextReadResponse()) {
-        if (!responseIterator.hasNext()) {
+        // hasNext call may be stuck at the underlying client when it is throttled
+
+        long start = System.nanoTime();
+        boolean hasNext = responseIterator.hasNext();
+        long delay = (System.nanoTime() - start) / 1_000_000L;
+
+        if (delay > 1_000) {
+          LOG.info("throttled for {} ms", delay);
+          storageClient.recordThrottlingMsecs(delay);
+        }
+
+        if (!hasNext) {
           fractionConsumed = 1d;
           return false;
         }

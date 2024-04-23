@@ -1653,13 +1653,28 @@ public class BigQueryServicesImpl implements BigQueryServices {
 
   static class StorageClientImpl implements StorageClient {
 
+    public final Counter throttlingMsecs =
+        Metrics.counter(StorageClientImpl.class, "throttling-msecs");
+
     // If client retries ReadRows requests due to RESOURCE_EXHAUSTED error, bump
     // throttlingMsecs according to delay. Runtime can use this information for
     // autoscaling decisions.
     @VisibleForTesting
     public static class RetryAttemptCounter implements BigQueryReadSettings.RetryAttemptListener {
-      public final Counter throttlingMsecs =
-          Metrics.counter(StorageClientImpl.class, "throttling-msecs");
+      public final Counter throttlingMsecs;
+
+      public RetryAttemptCounter() {
+        this(null);
+      }
+
+      public RetryAttemptCounter(@Nullable StorageClientImpl outer) {
+        if (outer != null) {
+          // reuse the same counter of outer class
+          throttlingMsecs = outer.throttlingMsecs;
+        } else {
+          throttlingMsecs = Metrics.counter(StorageClientImpl.class, "throttling-msecs");
+        }
+      }
 
       @SuppressWarnings("ProtoDurationGetSecondsGetNano")
       @Override
@@ -1693,7 +1708,7 @@ public class BigQueryServicesImpl implements BigQueryServices {
                   BigQueryReadSettings.defaultGrpcTransportProviderBuilder()
                       .setHeaderProvider(USER_AGENT_HEADER_PROVIDER)
                       .build())
-              .setReadRowsRetryAttemptListener(new RetryAttemptCounter());
+              .setReadRowsRetryAttemptListener(new RetryAttemptCounter(this));
 
       UnaryCallSettings.Builder<CreateReadSessionRequest, ReadSession> createReadSessionSettings =
           settingsBuilder.getStubSettingsBuilder().createReadSessionSettings();
@@ -1795,6 +1810,11 @@ public class BigQueryServicesImpl implements BigQueryServices {
         }
         throw e;
       }
+    }
+
+    @Override
+    public void recordThrottlingMsecs(long delay) {
+      throttlingMsecs.inc(delay);
     }
 
     @Override
