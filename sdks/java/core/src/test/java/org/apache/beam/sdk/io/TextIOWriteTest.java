@@ -41,6 +41,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -728,6 +729,13 @@ public class TextIOWriteTest {
 
     input.apply(write);
     p.run();
+
+    System.out.println(baseFilename);
+    final PathMatcher matcher = java.nio.file.FileSystems.getDefault().getPathMatcher("glob:" + baseFilename + '*');
+    try (java.nio.file.DirectoryStream<Path> dirStream = Files.newDirectoryStream(
+        new File("..").toPath(), matcher::matches)) {
+      dirStream.forEach(path -> System.out.println(path));
+    }
 
     assertOutputFiles(
         LINES2_ARRAY,
