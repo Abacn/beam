@@ -36,9 +36,11 @@ import org.apache.commons.csv.CSVRecord;
 final class CsvIOStringToCsvRecord
     extends PTransform<PCollection<String>, PCollection<List<String>>> {
   private final CSVFormat csvFormat;
+  private final String header;
 
   CsvIOStringToCsvRecord(CSVFormat csvFormat) {
     this.csvFormat = csvFormat;
+    this.header = String.join(String.valueOf(csvFormat.getDelimiter()), csvFormat.getHeader());
   }
 
   /**
@@ -55,6 +57,9 @@ final class CsvIOStringToCsvRecord
     @ProcessElement
     public void process(@Element String line, OutputReceiver<List<String>> receiver)
         throws IOException {
+      if (header.equals(line)) {
+        return;
+      }
       for (CSVRecord record : CSVParser.parse(line, csvFormat).getRecords()) {
         receiver.output(csvRecordtoList(record));
       }

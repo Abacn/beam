@@ -18,9 +18,11 @@
 package org.apache.beam.sdk.io.csv;
 
 import com.google.auto.value.AutoValue;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.PTransform;
@@ -28,18 +30,19 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SerializableFunction;
 import org.apache.beam.sdk.transforms.errorhandling.BadRecord;
 import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.Row;
 import org.apache.commons.csv.CSVFormat;
+import org.joda.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Stores parameters needed for CSV record parsing. */
 @AutoValue
-abstract class CsvIOParseConfiguration {
+abstract class CsvIOParseConfiguration<T> implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(CsvIOParseConfiguration.class);
 
-  /** A Dead Letter Queue that returns potential errors with {@link BadRecord}. */
-  final PTransform<PCollection<BadRecord>, PCollection<BadRecord>> errorHandlerTransform =
-      new BadRecordOutput();
-
-  static Builder builder() {
-    return new AutoValue_CsvIOParseConfiguration.Builder();
+  static <T> Builder<T> builder() {
+    return new AutoValue_CsvIOParseConfiguration.Builder<>();
   }
 
   /** The expected {@link CSVFormat} of the parsed CSV record. */
@@ -51,22 +54,42 @@ abstract class CsvIOParseConfiguration {
   /** A map of the {@link Schema.Field#getName()} to the custom CSV processing lambda. */
   abstract Map<String, SerializableFunction<String, Object>> getCustomProcessingMap();
 
+  /** A {@link SerializableFunction} from {@link Row} to custom Schema-mapped type. */
+  abstract SerializableFunction<Row, T> getFromRowFn();
+
+  /** The expected {@link Coder} for with the output type. */
+  abstract Coder<T> getCoder();
+
+  abstract PTransform<PCollection<BadRecord>, PCollection<BadRecord>> getErrorHandler();
+
   @AutoValue.Builder
-  abstract static class Builder {
-    abstract Builder setCsvFormat(CSVFormat csvFormat);
+  abstract static class Builder<T> implements Serializable {
+    abstract Builder<T> setCsvFormat(CSVFormat csvFormat);
 
-    abstract Builder setSchema(Schema schema);
+    abstract Builder<T> setSchema(Schema schema);
 
-    abstract Builder setCustomProcessingMap(
+    abstract Builder<T> setCustomProcessingMap(
         Map<String, SerializableFunction<String, Object>> customProcessingMap);
 
     abstract Optional<Map<String, SerializableFunction<String, Object>>> getCustomProcessingMap();
 
-    abstract CsvIOParseConfiguration autoBuild();
+    abstract Builder<T> setFromRowFn(SerializableFunction<Row, T> fromRowFn);
 
-    final CsvIOParseConfiguration build() {
+    abstract Builder<T> setCoder(Coder<T> coder);
+
+    abstract Builder<T> setErrorHandler(
+        PTransform<PCollection<BadRecord>, PCollection<BadRecord>> errorHandler);
+
+    abstract Optional<PTransform<PCollection<BadRecord>, PCollection<BadRecord>>> getErrorHandler();
+
+    abstract CsvIOParseConfiguration<T> autoBuild();
+
+    final CsvIOParseConfiguration<T> build() {
       if (!getCustomProcessingMap().isPresent()) {
         setCustomProcessingMap(new HashMap<>());
+      }
+      if (!getErrorHandler().isPresent()) {
+        setErrorHandler(new BadRecordOutput());
       }
       return autoBuild();
     }
@@ -81,8 +104,10 @@ abstract class CsvIOParseConfiguration {
     }
 
     private static class BadRecordTransformFn extends DoFn<BadRecord, BadRecord> {
+
       @ProcessElement
       public void process(@Element BadRecord input, OutputReceiver<BadRecord> receiver) {
+        LOG.error("{}: {}", Instant.now(), input);
         receiver.output(input);
       }
     }

@@ -137,7 +137,7 @@ public class SchemaAwareJavaBeans {
         .build();
   }
 
-  private static final TypeDescriptor<AllPrimitiveDataTypes>
+  public static final TypeDescriptor<AllPrimitiveDataTypes>
       ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR = TypeDescriptor.of(AllPrimitiveDataTypes.class);
 
   /** The schema for {@link AllPrimitiveDataTypes}. */
