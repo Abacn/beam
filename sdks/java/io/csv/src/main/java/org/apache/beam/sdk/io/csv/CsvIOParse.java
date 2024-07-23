@@ -102,12 +102,13 @@ class CsvIOParse<T> extends PTransform<PCollection<String>, PCollection<T>> {
             .get(errorTag)
             .output(
                 BadRecord.builder()
-                    .setFailure(BadRecord.Failure.builder().setException(e.getMessage()).build())
+                    .setFailure(BadRecord.Failure.builder().setDescription("bad record").setException(e.getMessage()).build())
                     .setRecord(
                         BadRecord.Record.builder()
                             .addCoderAndEncodedRecord(ListCoder.of(StringUtf8Coder.of()), record)
                             .build())
                     .build());
+        throw e;
       }
     }
 

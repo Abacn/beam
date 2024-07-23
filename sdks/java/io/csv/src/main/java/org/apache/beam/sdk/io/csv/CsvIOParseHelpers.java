@@ -152,7 +152,7 @@ final class CsvIOParseHelpers {
 
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
-          e.getMessage() + " field " + field.getName() + " was received -- type mismatch");
+          e.getMessage() + " field " + field.getName() + " was received -- type mismatch", e);
     }
   }
 }

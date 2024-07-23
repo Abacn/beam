@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.RowCoder;
 import org.apache.beam.sdk.io.common.SchemaAwareJavaBeans;
+import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.SchemaCoder;
 import org.apache.beam.sdk.testing.PAssert;
@@ -46,7 +47,7 @@ import org.junit.runners.JUnit4;
 /** Tests for {@link CsvIOParse}. */
 @RunWith(JUnit4.class)
 public class CsvIOParseTest {
-  @Rule public TestPipeline pipeline = TestPipeline.create();
+  @Rule public TestPipeline pipeline = TestPipeline.fromOptions(PipelineOptionsFactory.fromArgs("--enforceImmutability=false","--enforceEncodability=false").create());
   private static final String[] ALL_PRIMITIVE_DATA_TYPES_HEADER =
       new String[] {"aBoolean", "aDecimal", "aDouble", "aFloat", "anInteger", "aLong", "aString"};
 
