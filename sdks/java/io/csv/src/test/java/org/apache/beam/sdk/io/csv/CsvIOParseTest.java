@@ -17,7 +17,6 @@
  */
 package org.apache.beam.sdk.io.csv;
 
-import static org.apache.beam.sdk.io.common.SchemaAwareJavaBeans.ALL_PRIMITIVE_DATA_TYPES_SCHEMA;
 import static org.apache.beam.sdk.io.common.SchemaAwareJavaBeans.ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR;
 import static org.apache.beam.sdk.io.common.SchemaAwareJavaBeans.allPrimitiveDataTypes;
 import static org.apache.beam.sdk.io.common.SchemaAwareJavaBeans.allPrimitiveDataTypesFromRowFn;
@@ -50,6 +49,9 @@ public class CsvIOParseTest {
   @Rule public TestPipeline pipeline = TestPipeline.create();
   private static final String[] ALL_PRIMITIVE_DATA_TYPES_HEADER =
       new String[] {"aBoolean", "aDecimal", "aDouble", "aFloat", "anInteger", "aLong", "aString"};
+
+  private static final String[] NULLABLE_ALL_PRIMITIVE_DATA_TYPES_HEADER =
+      new String[] {"aBoolean", "aDouble", "aFloat", "anInteger", "aLong", "aString"};
 
   @Test
   public void isSerializable() {
@@ -111,16 +113,51 @@ public class CsvIOParseTest {
   }
 
   @Test
-  public void testNullString() {
-    SchemaAwareJavaBeans.AllPrimitiveDataTypes want =
-        allPrimitiveDataTypes(true, BigDecimal.valueOf(1.0), 2.0d, 3.0f, 4, 5L, "foo");
+  public void parsesToRowsNullable() {
+    Schema schema = SchemaAwareJavaBeans.NULLABLE_ALL_PRIMITIVE_DATA_TYPES_SCHEMA;
+    Row want =
+        Row.withSchema(schema)
+            .withFieldValues(
+                ImmutableMap.of(
+                    "aBoolean",
+                    true,
+                    "aDouble",
+                    2.0,
+                    "aFloat",
+                    3.0f,
+                    "anInteger",
+                    4,
+                    "aLong",
+                    5L
+                    ))
+            .build();
+
     CSVFormat csvFormat = csvFormat().withNullString("foo");
     String header =
-        String.join(String.valueOf(csvFormat.getDelimiter()), ALL_PRIMITIVE_DATA_TYPES_HEADER);
-    PCollection<String> records = pipeline.apply(Create.of(header, "true,1.0,2.0,3.0,4,5,foo"));
-    CsvIOParse<SchemaAwareJavaBeans.AllPrimitiveDataTypes> underTest =
-        new CsvIOParse<>(configurationBuilder(csvFormat));
-    PCollection<SchemaAwareJavaBeans.AllPrimitiveDataTypes> got = records.apply(underTest);
+        String.join(String.valueOf(csvFormat.getDelimiter()), NULLABLE_ALL_PRIMITIVE_DATA_TYPES_HEADER);
+    String comment = csvFormat.getCommentMarker() + " This is a comment";
+    PCollection<String> records =
+        pipeline.apply(Create.of(comment, header, "true,1.0,2.0,3.0,4,5,foo"));
+    RowCoder rowCoder = RowCoder.of(schema);
+    CsvIOParse<Row> underTest =
+        new CsvIOParse<>(
+            configurationBuilder(csvFormat, schema, rowCoder.getFromRowFunction(), rowCoder));
+    PCollection<Row> got = records.apply(underTest);
+    PAssert.that(got).containsInAnyOrder(want);
+    pipeline.run();
+  }
+
+  @Test
+  public void testNullString() {
+    SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes want =
+        SchemaAwareJavaBeans.nullableAllPrimitiveDataTypes(true, 2.0d, 3.0f, 4, 5L, null);
+    CSVFormat csvFormat = csvFormat().withNullString("foo");
+    String header =
+        String.join(String.valueOf(csvFormat.getDelimiter()), NULLABLE_ALL_PRIMITIVE_DATA_TYPES_HEADER);
+    PCollection<String> records = pipeline.apply(Create.of(header, "true,2.0,3.0,4,5,foo"));
+    CsvIOParse<SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes> underTest =
+        new CsvIOParse<>(configurationBuilderNullable(csvFormat));
+    PCollection<SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes> got = records.apply(underTest);
     PAssert.that(got).containsInAnyOrder(want);
     pipeline.run();
   }
@@ -139,12 +176,26 @@ public class CsvIOParseTest {
       configurationBuilder(CSVFormat csvFormat) {
     SerializableFunction<Row, SchemaAwareJavaBeans.AllPrimitiveDataTypes> fromRowFn =
         checkStateNotNull(allPrimitiveDataTypesFromRowFn());
-    Schema schema = checkStateNotNull(ALL_PRIMITIVE_DATA_TYPES_SCHEMA);
+    Schema schema = checkStateNotNull(SchemaAwareJavaBeans.ALL_PRIMITIVE_DATA_TYPES_SCHEMA);
     Coder<SchemaAwareJavaBeans.AllPrimitiveDataTypes> coder =
         SchemaCoder.of(
             schema,
             ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR,
             checkStateNotNull(allPrimitiveDataTypesToRowFn()),
+            fromRowFn);
+    return configurationBuilder(csvFormat, schema, fromRowFn, coder);
+  }
+
+  private static <T> CsvIOParseConfiguration.Builder<SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes>
+  configurationBuilderNullable(CSVFormat csvFormat) {
+    SerializableFunction<Row, SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes> fromRowFn =
+        checkStateNotNull(SchemaAwareJavaBeans.nullableAllPrimitiveDataTypesFromRowFn());
+    Schema schema = SchemaAwareJavaBeans.NULLABLE_ALL_PRIMITIVE_DATA_TYPES_SCHEMA;
+    Coder<SchemaAwareJavaBeans.NullableAllPrimitiveDataTypes> coder =
+        SchemaCoder.of(
+            schema,
+            SchemaAwareJavaBeans.NULLABLE_ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR,
+            checkStateNotNull(SchemaAwareJavaBeans.nullableAllPrimitiveDataTypesToRowFn()),
             fromRowFn);
     return configurationBuilder(csvFormat, schema, fromRowFn, coder);
   }

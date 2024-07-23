@@ -27,6 +27,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * {@link CsvIOStringToCsvRecord} is a class that takes a {@link PCollection<String>} input and
@@ -53,9 +54,9 @@ final class CsvIOStringToCsvRecord
   }
 
   /** Processes each line in order to convert it to a {@link CSVRecord}. */
-  private class ProcessLineToRecordFn extends DoFn<String, List<String>> {
+  private class ProcessLineToRecordFn extends DoFn<String, List<@Nullable String>> {
     @ProcessElement
-    public void process(@Element String line, OutputReceiver<List<String>> receiver)
+    public void process(@Element String line, OutputReceiver<List<@Nullable String>> receiver)
         throws IOException {
       if (header.equals(line)) {
         return;
@@ -67,9 +68,9 @@ final class CsvIOStringToCsvRecord
   }
 
   /** Creates a {@link List<String>} containing {@link CSVRecord} values. */
-  private static List<String> csvRecordtoList(CSVRecord record) {
-    List<String> cells = new ArrayList<>();
-    for (String cell : record) {
+  private static List<@Nullable String> csvRecordtoList(CSVRecord record) {
+    List<@Nullable String> cells = new ArrayList<>();
+    for (@Nullable String cell : record) {
       cells.add(cell);
     }
     return cells;

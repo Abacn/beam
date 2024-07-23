@@ -160,7 +160,7 @@ public class SchemaAwareJavaBeans {
     return DEFAULT_SCHEMA_PROVIDER.fromRowFunction(ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR);
   }
 
-  private static final TypeDescriptor<NullableAllPrimitiveDataTypes>
+  public static final TypeDescriptor<NullableAllPrimitiveDataTypes>
       NULLABLE_ALL_PRIMITIVE_DATA_TYPES_TYPE_DESCRIPTOR =
           TypeDescriptor.of(NullableAllPrimitiveDataTypes.class);
 
