@@ -46,6 +46,7 @@ import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.TupleTag;
 import org.apache.beam.sdk.values.TupleTagList;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableSet;
+import org.hamcrest.Matcher;
 import org.joda.time.Duration;
 import org.joda.time.Instant;
 import org.junit.After;
@@ -418,15 +419,19 @@ public class MetricsTest implements Serializable {
     }
   }
 
+  private static <T> Matcher<MetricResult<T>> metricsResultPatchStep(
+      final String name, final String step, final T value, final boolean isCommitted) {
+    return anyOf(
+        metricsResult(NAMESPACE, name, step, value, isCommitted),
+        // portable runner adds a suffix for metrics initiated outside anonymous pardo
+        metricsResult(NAMESPACE, name, step + "-ParMultiDo-Anonymous-", value, isCommitted));
+  }
+
   private static void assertCounterMetrics(MetricQueryResults metrics, boolean isCommitted) {
+    System.out.println(metrics.getCounters());
     assertThat(
         metrics.getCounters(),
-        anyOf(
-            // Step names are different for portable and non-portable runners.
-            hasItem(metricsResult(NAMESPACE, "count", "MyStep1", 3L, isCommitted)),
-            hasItem(
-                metricsResult(
-                    NAMESPACE, "count", "MyStep1-ParMultiDo-Anonymous-", 3L, isCommitted))));
+        hasItem(metricsResultPatchStep("count", "MyStep1", 3L, isCommitted)));
 
     assertThat(
         metrics.getCounters(),
@@ -446,23 +451,19 @@ public class MetricsTest implements Serializable {
   }
 
   private static void assertStringSetMetrics(MetricQueryResults metrics, boolean isCommitted) {
+    System.out.println(metrics.getStringSets());
     assertThat(
         metrics.getStringSets(),
         containsInAnyOrder(
-            metricsResult(
-                NAMESPACE,
-                "sources",
-                "MyStep1",
-                StringSetResult.create(ImmutableSet.of("gcs")),
-                isCommitted),
+            metricsResultPatchStep(
+                "sources", "MyStep1", StringSetResult.create(ImmutableSet.of("gcs")), isCommitted),
             metricsResult(
                 NAMESPACE,
                 "sinks",
                 "MyStep2",
                 StringSetResult.create(ImmutableSet.of("kafka", "bq")),
                 isCommitted),
-            metricsResult(
-                NAMESPACE,
+            metricsResultPatchStep(
                 "sideinputs",
                 "MyStep1",
                 StringSetResult.create(ImmutableSet.of("bigtable", "spanner")),
@@ -478,22 +479,9 @@ public class MetricsTest implements Serializable {
   private static void assertDistributionMetrics(MetricQueryResults metrics, boolean isCommitted) {
     assertThat(
         metrics.getDistributions(),
-        anyOf(
-            // Step names are different for portable and non-portable runners.
-            hasItem(
-                metricsResult(
-                    NAMESPACE,
-                    "input",
-                    "MyStep1",
-                    DistributionResult.create(26L, 3L, 5L, 13L),
-                    isCommitted)),
-            hasItem(
-                metricsResult(
-                    NAMESPACE,
-                    "input",
-                    "MyStep1-ParMultiDo-Anonymous-",
-                    DistributionResult.create(26L, 3L, 5L, 13L),
-                    isCommitted))));
+        hasItem(
+            metricsResultPatchStep(
+                "input", "MyStep1", DistributionResult.create(26L, 3L, 5L, 13L), isCommitted)));
 
     assertThat(
         metrics.getDistributions(),
