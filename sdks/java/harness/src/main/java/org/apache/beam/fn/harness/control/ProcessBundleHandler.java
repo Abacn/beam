@@ -516,21 +516,14 @@ public class ProcessBundleHandler {
               }
             });
     try {
-      PTransformFunctionRegistry startFunctionRegistry = bundleProcessor.getStartFunctionRegistry();
-      PTransformFunctionRegistry finishFunctionRegistry =
-          bundleProcessor.getFinishFunctionRegistry();
       ExecutionStateTracker stateTracker = bundleProcessor.getStateTracker();
 
       try (HandleStateCallsForBundle beamFnStateClient = bundleProcessor.getBeamFnStateClient()) {
         stateTracker.start(request.getInstructionId());
         try {
-          // Already in reverse topological order so we don't need to do anything.
-          for (ThrowingRunnable startFunction : startFunctionRegistry.getFunctions()) {
-            LOG.debug("Starting function {}", startFunction);
-            startFunction.run();
-          }
 
           if (request.getProcessBundle().hasElements()) {
+            runStartFunctions(bundleProcessor);
             boolean inputFinished =
                 bundleProcessor
                     .getInboundObserver()
@@ -541,7 +534,9 @@ public class ProcessBundleHandler {
                       + "all data and timer inputs. Unterminated endpoints: "
                       + bundleProcessor.getInboundObserver().getUnfinishedEndpoints());
             }
+            runFinishFunctions(bundleProcessor);
           } else if (!bundleProcessor.getInboundEndpointApiServiceDescriptors().isEmpty()) {
+            runStartFunctions(bundleProcessor);
             BeamFnDataInboundObserver observer = bundleProcessor.getInboundObserver();
             beamFnDataClient.registerReceiver(
                 request.getInstructionId(),
@@ -551,13 +546,7 @@ public class ProcessBundleHandler {
             beamFnDataClient.unregisterReceiver(
                 request.getInstructionId(),
                 bundleProcessor.getInboundEndpointApiServiceDescriptors());
-          }
-
-          // Need to reverse this since we want to call finish in topological order.
-          for (ThrowingRunnable finishFunction :
-              Lists.reverse(finishFunctionRegistry.getFunctions())) {
-            LOG.debug("Finishing function {}", finishFunction);
-            finishFunction.run();
+            runFinishFunctions(bundleProcessor);
           }
 
           // If bundleProcessor has not flushed any elements, embed them in response.
@@ -599,6 +588,24 @@ public class ProcessBundleHandler {
       // Make sure we clean-up from the active set of bundle processors.
       bundleProcessorCache.discard(bundleProcessor);
       throw e;
+    }
+  }
+
+  private void runStartFunctions(BundleProcessor bundleProcessor) throws Exception {
+    PTransformFunctionRegistry startFunctionRegistry = bundleProcessor.getStartFunctionRegistry();
+    // Already in reverse topological order so we don't need to do anything.
+    for (ThrowingRunnable startFunction : startFunctionRegistry.getFunctions()) {
+      LOG.debug("Starting function {}", startFunction);
+      startFunction.run();
+    }
+  }
+
+  private void runFinishFunctions(BundleProcessor bundleProcessor) throws Exception {
+    PTransformFunctionRegistry finishFunctionRegistry = bundleProcessor.getFinishFunctionRegistry();
+    // Need to reverse this since we want to call finish in topological order.
+    for (ThrowingRunnable finishFunction : Lists.reverse(finishFunctionRegistry.getFunctions())) {
+      LOG.debug("Finishing function {}", finishFunction);
+      finishFunction.run();
     }
   }
 
