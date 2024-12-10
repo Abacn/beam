@@ -77,6 +77,8 @@ dependencies {
     exclude group: "org.apache.zookeeper", module: "zookeeper"
     // "kafka-clients" has to be provided since user can use its own version.
     exclude group: "org.apache.kafka", module: "kafka-clients"
+    // causes Beam get resolved to older avro dependency. Use avro from ":sdks:java:extensions:avro"
+    exclude group: "org.apache.avro", module: "avro"
   }
   implementation ("io.confluent:kafka-schema-registry-client:${confluentVersion}") {
     // It depends on "spotbugs-annotations:3.1.9" which clashes with current

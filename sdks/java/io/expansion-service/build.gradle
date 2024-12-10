@@ -36,6 +36,11 @@ configurations.runtimeClasspath {
 shadowJar {
   mergeServiceFiles()
   outputs.upToDateWhen { false }
+  exclude(
+    // maven pom.xml from dependencies
+    'META-INF/maven/**/pom.properties',
+    'META-INF/maven/**/pom.xml',
+  )
 }
 
 description = "Apache Beam :: SDKs :: Java :: IO :: Expansion Service"
@@ -63,6 +68,8 @@ dependencies {
 
   runtimeOnly library.java.kafka_clients
   runtimeOnly library.java.slf4j_jdk14
+
+  testImplementation library.java.junit
 }
 
 task runExpansionService (type: JavaExec) {

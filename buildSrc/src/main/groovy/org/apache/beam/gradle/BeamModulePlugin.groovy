@@ -1265,7 +1265,10 @@ class BeamModulePlugin implements Plugin<Project> {
           config.resolutionStrategy {
             // Filtering versionless coordinates that depend on BOM. Beam project needs to set the
             // versions for only handful libraries when building the project (BEAM-9542).
-            def librariesWithVersion = project.library.java.values().findAll { it.split(':').size() > 2 }
+            def librariesWithVersion = project.library.java.values().findAll {
+              // test jars are not used as source-of-truth for version. e.g. avro:tests
+              it.split(':').size() > 2 && ! it.endsWith(':tests')
+            }
             force librariesWithVersion
 
             // hamcrest-core and hamcrest-library have been superseded by hamcrest.

@@ -49,5 +49,11 @@ task runExpansionService (type: JavaExec) {
 }
 
 shadowJar {
+  mergeServiceFiles()
   outputs.upToDateWhen { false }
+  exclude(
+    // maven pom.xml from dependencies
+    'META-INF/maven/**/pom.properties',
+    'META-INF/maven/**/pom.xml',
+  )
 }
