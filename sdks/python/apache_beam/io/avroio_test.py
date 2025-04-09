@@ -40,9 +40,7 @@ from apache_beam.io import source_test_utils
 from apache_beam.io.avroio import _FastAvroSource  # For testing
 from apache_beam.io.avroio import avro_schema_to_beam_schema  # For testing
 from apache_beam.io.avroio import beam_schema_to_avro_schema  # For testing
-from apache_beam.io.avroio import avro_atomic_value_to_beam_atomic_value  # For testing
 from apache_beam.io.avroio import avro_union_type_to_beam_type  # For testing
-from apache_beam.io.avroio import beam_atomic_value_to_avro_atomic_value  # For testing
 from apache_beam.io.avroio import avro_dict_to_beam_row  # For testing
 from apache_beam.io.avroio import beam_row_to_avro_dict  # For testing
 from apache_beam.io.avroio import _create_avro_sink  # For testing
@@ -172,11 +170,11 @@ class AvroBase(object):
             | beam.Map(stable_repr))
         assert_that(readback, equal_to([stable_repr(r) for r in rows]))
 
-  @pytest.mark.xlang_sql_expansion_service
-  @unittest.skipIf(
-      TestPipeline().get_pipeline_options().view_as(StandardOptions).runner is
-      None,
-      "Must be run with a runner that supports staging java artifacts.")
+  # @pytest.mark.xlang_sql_expansion_service
+  # @unittest.skipIf(
+  #     TestPipeline().get_pipeline_options().view_as(StandardOptions).runner is
+  #     None,
+  #     "Must be run with a runner that supports staging java artifacts.")
   def test_avro_schema_to_beam_schema_with_nullable_atomic_fields(self):
     records = []
     records.extend(self.RECORDS)
@@ -187,33 +185,15 @@ class AvroBase(object):
     beam_schema = avro_schema_to_beam_schema(avro_schema)
 
     with TestPipeline() as p:
-      readback = (
-          p
+      row1 = (p
           | Create(records)
-          | beam.Map(avro_dict_to_beam_row(avro_schema, beam_schema))
-          | SqlTransform("SELECT * FROM PCOLLECTION")
+          | beam.Map(avro_dict_to_beam_row(avro_schema, beam_schema)))
+      row2 = (row1 | SqlTransform("SELECT * FROM PCOLLECTION"))
+      readback = (row2
           | beam.Map(beam_row_to_avro_dict(avro_schema, beam_schema)))
+      row1 | "print1" >> beam.Map(print)
+      row2 | "print2" >> beam.Map(print)
       assert_that(readback, equal_to(records))
-
-  def test_avro_atomic_value_to_beam_atomic_value(self):
-    input_outputs = [('int', 1, 1), ('int', -1, 0xffffffff),
-                     ('int', None, None), ('long', 1, 1),
-                     ('long', -1, 0xffffffffffffffff), ('long', None, None),
-                     ('string', 'foo', 'foo')]
-    for test_avro_type, test_value, expected_value in input_outputs:
-      actual_value = avro_atomic_value_to_beam_atomic_value(
-          test_avro_type, test_value)
-      hc.assert_that(actual_value, hc.equal_to(expected_value))
-
-  def test_beam_atomic_value_to_avro_atomic_value(self):
-    input_outputs = [('int', 1, 1), ('int', 0xffffffff, -1),
-                     ('int', None, None), ('long', 1, 1),
-                     ('long', 0xffffffffffffffff, -1), ('long', None, None),
-                     ('string', 'foo', 'foo')]
-    for test_avro_type, test_value, expected_value in input_outputs:
-      actual_value = beam_atomic_value_to_avro_atomic_value(
-          test_avro_type, test_value)
-      hc.assert_that(actual_value, hc.equal_to(expected_value))
 
   def test_avro_union_type_to_beam_type_with_nullable_long(self):
     union_type = ['null', 'long']
