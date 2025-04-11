@@ -25,9 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 import org.apache.beam.sdk.extensions.sql.SqlTransform;
-import org.apache.beam.sdk.extensions.sql.impl.QueryPlanner;
 import org.apache.beam.sdk.extensions.sql.impl.rel.BeamSqlRelUtils;
 import org.apache.beam.sdk.extensions.sql.meta.provider.TableProvider;
 import org.apache.beam.sdk.schemas.Schema;
@@ -44,17 +42,9 @@ import org.apache.beam.sdk.values.PDone;
 import org.apache.beam.sdk.values.Row;
 import org.apache.beam.sdk.values.TypeDescriptors;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableList;
-import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableMap;
 
 @AutoService(SchemaTransformProvider.class)
 public class SqlTransformSchemaTransformProvider implements SchemaTransformProvider {
-
-  private static final Map<String, Class<? extends QueryPlanner>> QUERY_PLANNERS =
-      ImmutableMap.of(
-          "zetasql", org.apache.beam.sdk.extensions.sql.zetasql.ZetaSQLQueryPlanner.class,
-          "calcite", org.apache.beam.sdk.extensions.sql.impl.CalciteQueryPlanner.class);
-  private static final EnumerationType QUERY_ENUMERATION =
-      EnumerationType.create(QUERY_PLANNERS.keySet().stream().collect(Collectors.toList()));
 
   private static final OneOfType QUERY_PARAMETER =
       OneOfType.create(
@@ -100,7 +90,6 @@ public class SqlTransformSchemaTransformProvider implements SchemaTransformProvi
         Schema.Field.of("query", Schema.FieldType.STRING).withDescription("SQL query to execute"),
         Schema.Field.nullable(
             "ddl", Schema.FieldType.STRING), // TODO: Underlying builder seems more capable?
-        Schema.Field.nullable("dialect", Schema.FieldType.logicalType(QUERY_ENUMERATION)),
         Schema.Field.nullable("autoload", Schema.FieldType.BOOLEAN),
         Schema.Field.nullable(
             "tableproviders", Schema.FieldType.array(Schema.FieldType.logicalType(providerEnum))),
@@ -144,10 +133,7 @@ public class SqlTransformSchemaTransformProvider implements SchemaTransformProvi
       input.apply(
           "noop_" + inputs.size(),
           MapElements.into(TypeDescriptors.nulls())
-              .via(
-                  err -> {
-                    return null;
-                  }));
+              .via(err -> null));
       inputs.add(input);
       return PDone.in(input.getPipeline());
     }
@@ -172,17 +158,6 @@ public class SqlTransformSchemaTransformProvider implements SchemaTransformProvi
         throw new IllegalArgumentException("Configuration must provide a query string.");
       }
       SqlTransform transform = SqlTransform.query(queryString);
-
-      // Allow setting the query planner class via the dialect name.
-      EnumerationType.Value dialect =
-          config.getLogicalTypeValue("dialect", EnumerationType.Value.class);
-      if (dialect != null) {
-        Class<? extends QueryPlanner> queryPlannerClass =
-            QUERY_PLANNERS.get(QUERY_ENUMERATION.toString(dialect));
-        if (queryPlannerClass != null) {
-          transform = transform.withQueryPlannerClass(queryPlannerClass);
-        }
-      }
 
       // Add any DDL strings
       String ddl = config.getString("ddl");
@@ -218,8 +193,7 @@ public class SqlTransformSchemaTransformProvider implements SchemaTransformProvi
         }
       }
 
-      // TODO: Process query parameters. This is not necessary for Syndeo GA but would be
-      // really nice to have.
+      // TODO: Process query parameters. This would be really nice to have.
 
       // TODO: See about reimplementing a correct version of SqlTransform
       ErrorCapture errors = new ErrorCapture();

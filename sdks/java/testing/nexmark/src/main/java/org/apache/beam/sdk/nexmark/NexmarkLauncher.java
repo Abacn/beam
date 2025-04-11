@@ -19,7 +19,6 @@ package org.apache.beam.sdk.nexmark;
 
 import static org.apache.beam.sdk.nexmark.NexmarkQueryName.PORTABILITY_BATCH;
 import static org.apache.beam.sdk.nexmark.NexmarkUtils.PubSubMode.COMBINED;
-import static org.apache.beam.sdk.nexmark.queries.sql.SqlQueryUtils.createSqlQueries;
 import static org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.base.Preconditions.checkArgument;
 import static org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.base.Preconditions.checkState;
 
@@ -1281,11 +1280,7 @@ public class NexmarkLauncher<OptionT extends NexmarkOptions> {
 
   private Map<NexmarkQueryName, NexmarkQuery> createQueries() {
     Map<NexmarkQueryName, NexmarkQuery> defaultQueries;
-    if (isSql()) {
-      defaultQueries = createSqlQueries(configuration);
-    } else {
-      defaultQueries = createJavaQueries();
-    }
+    defaultQueries = createJavaQueries();
 
     Set<NexmarkQueryName> skippableQueries = getSkippableQueries();
     return ImmutableMap.copyOf(

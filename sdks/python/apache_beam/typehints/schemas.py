@@ -67,6 +67,7 @@ any backwards-compatibility guarantee.
 # pytype: skip-file
 
 import decimal
+import enum
 import logging
 from typing import Any
 from typing import ByteString
@@ -1157,3 +1158,42 @@ class VariableString(PassThroughLogicalType[str, np.int32]):
 
   def argument(self):
     return self.max_length
+
+
+# TODO: support enum
+class JavaEnumLogicalType(LogicalType[enum.Enum, int, map[str, int]]):
+  def urn(cls):
+    return "beam:logical_type:javasdk_enum:v1"
+
+  def __init__(self, arg_map: map[str, int]):
+    self.arg_map = arg_map
+
+  @classmethod
+  def representation_type(cls):
+    # type: () -> type
+    return int
+
+  @classmethod
+  def language_type(cls):
+    return enum.Enum
+
+  def to_representation_type(self, value):
+    # type: (decimal.Decimal) -> bytes
+
+    return DecimalLogicalType().to_representation_type(value)
+
+  def to_language_type(self, value):
+    # type: (bytes) -> enum.Enum
+
+    return DecimalLogicalType().to_language_type(value)
+
+  @classmethod
+  def argument_type(cls):
+    return map[str, int]
+
+  def argument(self):
+    return self.arg_map
+
+  @classmethod
+  def _from_typing(cls, typ):
+    return cls()
