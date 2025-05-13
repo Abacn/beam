@@ -130,13 +130,13 @@ public class Environments {
           return ver;
         }
       }
-
-      JavaVersion fallback = null;
+      // fallback to next LTS java if supported, otherwise, fallback to the newest supported LTS
+      JavaVersion fallback = JavaVersion.java21;
       int specificationInt = Integer.parseInt(specification);
       int minDistance = Integer.MAX_VALUE;
       for (JavaVersion candidate : JavaVersion.values()) {
-        int distance = Math.abs(candidate.specificationInt - specificationInt);
-        if (distance <= minDistance) {
+        int distance = candidate.specificationInt - specificationInt;
+        if (distance >= 0 && distance <= minDistance) {
           fallback = candidate;
           minDistance = distance;
         }
