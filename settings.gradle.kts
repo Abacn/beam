@@ -19,7 +19,7 @@ import com.gradle.enterprise.gradleplugin.internal.extension.BuildScanExtensionW
 
 pluginManagement {
   plugins {
-     id("org.javacc.javacc") version "3.0.3" // enable the JavaCC parser generator
+    id("org.javacc.javacc") version "3.0.3" // enable the JavaCC parser generator
   }
 }
 
@@ -32,7 +32,8 @@ plugins {
 // JENKINS_HOME and BUILD_ID set automatically during Jenkins execution
 val isJenkinsBuild = arrayOf("JENKINS_HOME", "BUILD_ID").all { System.getenv(it) != null }
 // GITHUB_REPOSITORY and GITHUB_RUN_ID set automatically during Github Actions run
-val isGithubActionsBuild = arrayOf("GITHUB_REPOSITORY", "GITHUB_RUN_ID").all { System.getenv(it) != null }
+val isGithubActionsBuild =
+  arrayOf("GITHUB_REPOSITORY", "GITHUB_RUN_ID").all { System.getenv(it) != null }
 val isCi = isJenkinsBuild || isGithubActionsBuild
 
 develocity {

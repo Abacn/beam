@@ -1,0 +1,18 @@
+plugins { id 'org.apache.beam.module' }
+applyJavaNature(
+        automaticModuleName: 'org.apache.beam.sdk.io.kafka',
+        mavenRepositories: [
+                [id: 'io.confluent', url: 'https://packages.confluent.io/maven/']
+        ],
+        publish: False
+)
+
+description = "Apache Beam :: SDKs :: Java :: IO :: Kafka :: GMK Tests"
+ext {
+  summary = "Integration tests on Google Managed Kafka"
+}
+
+dependencies {
+  implementation project(path: ":sdks:java:core", configuration: "shadow")
+  implementation project(path: ":sdks:java:io:kafka", configuration: "testRuntimeMigration")
+}
