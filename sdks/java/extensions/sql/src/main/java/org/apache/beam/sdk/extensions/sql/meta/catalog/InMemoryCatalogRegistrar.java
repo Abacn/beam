@@ -18,7 +18,6 @@
 package org.apache.beam.sdk.extensions.sql.meta.catalog;
 
 import com.google.auto.service.AutoService;
-import org.apache.beam.sdk.extensions.sql.meta.provider.iceberg.IcebergCatalog;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableList;
 
 @AutoService(CatalogRegistrar.class)
@@ -27,7 +26,6 @@ public class InMemoryCatalogRegistrar implements CatalogRegistrar {
   public Iterable<Class<? extends Catalog>> getCatalogs() {
     return ImmutableList.<Class<? extends Catalog>>builder()
         .add(InMemoryCatalog.class)
-        .add(IcebergCatalog.class)
         .build();
   }
 }

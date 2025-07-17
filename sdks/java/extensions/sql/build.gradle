@@ -63,21 +63,24 @@ def hadoopVersions = [
 
 hadoopVersions.each {kv -> configurations.create("hadoopVersion$kv.key")}
 
+def calcite_version = '1.28.0'
+def avatica_version = '1.19.0'
+
 dependencies {
   implementation enforcedPlatform(library.java.google_cloud_platform_libraries_bom)
 
+  implementation "org.apache.calcite:calcite-core:$calcite_version"
+  implementation "org.apache.calcite:calcite-linq4j:$calcite_version"
+  implementation "org.apache.calcite.avatica:avatica-core:$avatica_version"
   // TODO(https://github.com/apache/beam/issues/21156): Determine how to build without this dependency
   provided "org.immutables:value:2.8.8"
   permitUnusedDeclared "org.immutables:value:2.8.8"
   javacc "net.java.dev.javacc:javacc:4.0"
   fmppTask "com.googlecode.fmpp-maven-plugin:fmpp-maven-plugin:1.0"
   fmppTask "org.freemarker:freemarker:2.3.31"
-  fmppTemplates library.java.vendored_calcite_1_28_0
+  fmppTemplates "org.apache.calcite:calcite-core:$calcite_version"
   implementation project(path: ":sdks:java:core", configuration: "shadow")
   implementation project(":sdks:java:managed")
-  implementation project(":sdks:java:io:iceberg")
-  runtimeOnly project(":sdks:java:io:iceberg:bqms")
-  runtimeOnly project(":sdks:java:io:iceberg:hive")
   implementation project(":sdks:java:extensions:avro")
   implementation project(":sdks:java:extensions:join-library")
   permitUnusedDeclared project(":sdks:java:extensions:join-library") // BEAM-11761
@@ -85,9 +88,9 @@ dependencies {
   implementation project(path: ":runners:direct-java", configuration: "shadow")
   implementation library.java.commons_codec
   implementation library.java.commons_csv
+  implementation library.java.commons_lang3
   implementation library.java.jackson_databind
   implementation library.java.joda_time
-  implementation library.java.vendored_calcite_1_28_0
   implementation "org.codehaus.janino:janino:3.0.11"
   implementation "org.codehaus.janino:commons-compiler:3.0.11"
   implementation library.java.jackson_core
@@ -117,7 +120,6 @@ dependencies {
 
   testImplementation "org.apache.iceberg:iceberg-api:1.6.1"
   testImplementation "org.apache.iceberg:iceberg-core:1.6.1"
-  testImplementation library.java.vendored_calcite_1_28_0
   testImplementation library.java.vendored_guava_32_1_2_jre
   testImplementation library.java.junit
   testImplementation library.java.quickcheck_core
@@ -157,18 +159,18 @@ task copyFmppTemplatesFromSrc(type: Copy) {
 task copyFmppTemplatesFromCalciteCore(type: Copy) {
   dependsOn configurations.fmppTemplates
   File calciteCoreJar = files(configurations.fmppTemplates.files).filter {
-    it.name.startsWith("beam-vendor-calcite")
+    it.name.startsWith("calcite-core")
   }.singleFile
   from zipTree(calciteCoreJar)
   include "**/Parser.jj"
   into "${project.buildDir}/templates-fmpp"
   filter{
     line ->
-      line.replace('import org.apache.calcite.', 'import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.')
+      line.replace('import org.apache.calcite.', 'import org.apache.calcite.')
   }
   filter{
     line ->
-      line.replace('import static org.apache.calcite.', 'import static org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.')
+      line.replace('import static org.apache.calcite.', 'import static org.apache.calcite.')
   }
 }
 
