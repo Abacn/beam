@@ -63,8 +63,8 @@ def hadoopVersions = [
 
 hadoopVersions.each {kv -> configurations.create("hadoopVersion$kv.key")}
 
-def calcite_version = '1.28.0'
-def avatica_version = '1.19.0'
+def calcite_version = '1.39.0'
+def avatica_version = '1.26.0'
 
 dependencies {
   implementation enforcedPlatform(library.java.google_cloud_platform_libraries_bom)
@@ -298,4 +298,6 @@ test {
   evaluationDependsOn(":sdks:java:extensions:sql:udf-test-provider") // Needed to resolve jarPath.
   systemProperty "beam.sql.udf.test.jar_path", project(":sdks:java:extensions:sql:udf-test-provider").jarPath
   systemProperty "beam.sql.udf.test.empty_jar_path", emptyJar.archivePath
+
+  outputs.upToDateWhen { false }
 }

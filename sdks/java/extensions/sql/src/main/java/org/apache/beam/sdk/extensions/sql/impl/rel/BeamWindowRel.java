@@ -431,10 +431,11 @@ public class BeamWindowRel extends Window implements BeamRelNode {
     return this.copy(traitSet, sole(inputs), this.constants, this.rowType, this.groups);
   }
 
-  // @Override
-  // public Window copy(List<RexLiteral> constants) {
-  //   return this.copy(traitSet, input, constants, this.rowType, this.groups);
-  // }
+  // Needed for Calcite 1.37+
+  @Override
+  public Window copy(List<RexLiteral> constants) {
+    return this.copy(traitSet, input, constants, this.rowType, this.groups);
+  }
 
   public BeamWindowRel copy(
       RelTraitSet traitSet,
