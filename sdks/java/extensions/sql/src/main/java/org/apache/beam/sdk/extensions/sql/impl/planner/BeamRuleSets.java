@@ -42,13 +42,13 @@ import org.apache.beam.sdk.extensions.sql.impl.rule.BeamUnionRule;
 import org.apache.beam.sdk.extensions.sql.impl.rule.BeamUnnestRule;
 import org.apache.beam.sdk.extensions.sql.impl.rule.BeamValuesRule;
 import org.apache.beam.sdk.extensions.sql.impl.rule.BeamWindowRule;
+import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
-import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableList;
 
 /**
  * {@link RuleSet} used in {@code BeamQueryPlanner}. It translates a standard Calcite {@link
@@ -129,14 +129,15 @@ public class BeamRuleSets {
           PruneEmptyRules.UNION_INSTANCE);
 
   private static final List<RelOptRule> BEAM_CONVERTERS =
-      ImmutableList.of(
-          BeamWindowRule.INSTANCE,
+      ImmutableList.<RelOptRule>builder()
+          .add(BeamWindowRule.INSTANCE,
           BeamCalcRule.INSTANCE,
           BeamAggregationRule.INSTANCE,
           BeamBasicAggregationRule.INSTANCE,
           BeamSortRule.INSTANCE,
           BeamValuesRule.INSTANCE,
           BeamIntersectRule.INSTANCE,
+          // BeamFilterRule.INSTANCE,
           BeamMinusRule.INSTANCE,
           BeamUnionRule.INSTANCE,
           BeamUncollectRule.INSTANCE,
@@ -144,7 +145,7 @@ public class BeamRuleSets {
           BeamSideInputJoinRule.INSTANCE,
           BeamCoGBKJoinRule.INSTANCE,
           BeamSideInputLookupJoinRule.INSTANCE,
-          BeamMatchRule.INSTANCE);
+          BeamMatchRule.INSTANCE).build();
 
   private static final List<RelOptRule> BEAM_TO_ENUMERABLE =
       ImmutableList.of(BeamEnumerableConverterRule.INSTANCE);

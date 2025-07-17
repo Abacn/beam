@@ -43,6 +43,7 @@ import org.apache.calcite.linq4j.Enumerator;
 import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.schema.SchemaPlus;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * Abstract wrapper for {@link CalciteConnection} to simplify extension.
@@ -333,8 +334,10 @@ public abstract class CalciteConnectionWrapper implements CalciteConnection {
     connection.setSchema(schema);
   }
 
+  // CalciteConnection.getSchema() marked nullable but Connection.getSchema() does not
+  @SuppressWarnings("override.return")
   @Override
-  public String getSchema() throws SQLException {
+  public @Nullable String getSchema() throws SQLException {
     return connection.getSchema();
   }
 
