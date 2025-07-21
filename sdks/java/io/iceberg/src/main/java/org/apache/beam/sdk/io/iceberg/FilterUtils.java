@@ -38,21 +38,21 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.apache.beam.sdk.annotations.Internal;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlBasicCall;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlIdentifier;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlKind;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlLiteral;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlNode;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlNodeList;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.SqlOperator;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.parser.SqlParser;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.util.DateString;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.util.TimeString;
-import org.apache.beam.vendor.calcite.v1_28_0.org.apache.calcite.util.TimestampString;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.base.Preconditions;
 import org.apache.beam.vendor.guava.v32_1_2_jre.com.google.common.collect.ImmutableMap;
+import org.apache.calcite.sql.SqlBasicCall;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.SqlKind;
+import org.apache.calcite.sql.SqlLiteral;
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlNodeList;
+import org.apache.calcite.sql.SqlOperator;
+import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.parser.SqlParser;
+import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.DateString;
+import org.apache.calcite.util.TimeString;
+import org.apache.calcite.util.TimestampString;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expression.Operation;
@@ -342,7 +342,7 @@ public class FilterUtils {
         LocalDate date;
         if (SqlTypeName.STRING_TYPES.contains(typeName)) {
           date = LocalDate.parse(literal.getValueAs(String.class));
-        } else if (SqlTypeName.DATE.equals(typeName)) {
+        } else if (SqlTypeName.DATE.equals(typeName) || SqlTypeName.UNKNOWN.equals(typeName)) {
           DateString dateValue = literal.getValueAs(DateString.class);
           date = LocalDate.parse(dateValue.toString());
         } else {
@@ -353,7 +353,7 @@ public class FilterUtils {
         LocalTime time;
         if (SqlTypeName.STRING_TYPES.contains(typeName)) {
           time = LocalTime.parse(literal.getValueAs(String.class));
-        } else if (SqlTypeName.TIME.equals(typeName)) {
+        } else if (SqlTypeName.TIME.equals(typeName) || SqlTypeName.UNKNOWN.equals(typeName)) {
           TimeString timeString = literal.getValueAs(TimeString.class);
           time = LocalTime.parse(timeString.toString());
         } else {
