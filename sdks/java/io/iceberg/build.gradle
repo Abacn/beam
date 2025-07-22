@@ -45,7 +45,7 @@ def parquet_version = "1.15.2"
 def orc_version = "1.9.2"
 def hive_version = "3.1.3"
 
-def calcite_version = '1.33.0'
+def calcite_version = '1.34.0'
 
 dependencies {
     implementation library.java.vendored_guava_32_1_2_jre
