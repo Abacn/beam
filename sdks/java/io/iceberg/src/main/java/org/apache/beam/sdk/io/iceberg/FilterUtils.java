@@ -342,7 +342,7 @@ public class FilterUtils {
         return literal.getValueAs(String.class);
       case DATE:
         LocalDate date;
-        if (SqlTypeName.STRING_TYPES.contains(typeName) || SqlTypeName.UNKNOWN.equals(typeName)) {
+        if (SqlTypeName.STRING_TYPES.contains(typeName)) {
           date = LocalDate.parse(literal.getValueAs(String.class));
         } else if (SqlTypeName.DATE.equals(typeName)) {
           DateString dateValue = literal.getValueAs(DateString.class);
@@ -353,7 +353,7 @@ public class FilterUtils {
         return DateTimeUtil.daysFromDate(date);
       case TIME:
         LocalTime time;
-        if (SqlTypeName.STRING_TYPES.contains(typeName) || SqlTypeName.UNKNOWN.equals(typeName)) {
+        if (SqlTypeName.STRING_TYPES.contains(typeName)) {
           time = LocalTime.parse(literal.getValueAs(String.class));
         } else if (SqlTypeName.TIME.equals(typeName)) {
           TimeString timeString = literal.getValueAs(TimeString.class);
@@ -364,7 +364,7 @@ public class FilterUtils {
         return DateTimeUtil.microsFromTime(time);
       case TIMESTAMP:
         LocalDateTime datetime;
-        if (SqlTypeName.STRING_TYPES.contains(typeName) || SqlTypeName.UNKNOWN.equals(typeName)) {
+        if (SqlTypeName.STRING_TYPES.contains(typeName)) {
           String value = literal.getValueAs(String.class);
           datetime = getLocalDateTime(value);
         } else if (SqlTypeName.DATE.equals(typeName)) {
