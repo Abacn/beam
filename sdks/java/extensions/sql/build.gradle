@@ -63,6 +63,8 @@ def hadoopVersions = [
 
 hadoopVersions.each {kv -> configurations.create("hadoopVersion$kv.key")}
 
+def calcite_version = '1.40.0'
+
 dependencies {
   implementation enforcedPlatform(library.java.google_cloud_platform_libraries_bom)
 
@@ -73,6 +75,8 @@ dependencies {
   fmppTask "com.googlecode.fmpp-maven-plugin:fmpp-maven-plugin:1.0"
   fmppTask "org.freemarker:freemarker:2.3.31"
   fmppTemplates library.java.vendored_calcite_1_40_0
+  implementation "org.apache.calcite:calcite-core:$calcite_version"
+  implementation "org.apache.calcite:calcite-linq4j:$calcite_version"
   implementation project(path: ":sdks:java:core", configuration: "shadow")
   implementation project(":sdks:java:managed")
   implementation project(":sdks:java:io:iceberg")
@@ -162,18 +166,18 @@ task copyFmppTemplatesFromCalciteCore(type: Copy) {
   from zipTree(calciteCoreJar)
   include "**/Parser.jj"
   into "${project.buildDir}/templates-fmpp"
-  filter{
-    line ->
-      line.replace('import org.apache.calcite.', 'import org.apache.beam.vendor.calcite.v1_40_0.org.apache.calcite.')
-  }
-  filter{
-    line ->
-      line.replace('import static org.apache.calcite.', 'import static org.apache.beam.vendor.calcite.v1_40_0.org.apache.calcite.')
-  }
-  filter{
-    line ->
-      line.replace('import com.google.common.', 'import org.apache.beam.vendor.calcite.v1_40_0.com.google.common.')
-  }
+//  filter{
+//    line ->
+//      line.replace('import org.apache.calcite.', 'import org.apache.beam.vendor.calcite.v1_40_0.org.apache.calcite.')
+//  }
+//  filter{
+//    line ->
+//      line.replace('import static org.apache.calcite.', 'import static org.apache.beam.vendor.calcite.v1_40_0.org.apache.calcite.')
+//  }
+//  filter{
+//    line ->
+//      line.replace('import com.google.common.', 'import org.apache.beam.vendor.calcite.v1_40_0.com.google.common.')
+//  }
 }
 
 // Generate the FMPP sources from the FMPP templates.
