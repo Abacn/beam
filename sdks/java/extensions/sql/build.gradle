@@ -63,7 +63,7 @@ def hadoopVersions = [
 
 hadoopVersions.each {kv -> configurations.create("hadoopVersion$kv.key")}
 
-def calcite_version = '1.28.0'
+def calcite_version = '1.33.0'
 
 dependencies {
   implementation enforcedPlatform(library.java.google_cloud_platform_libraries_bom)
