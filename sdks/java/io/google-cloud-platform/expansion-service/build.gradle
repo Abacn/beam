@@ -58,5 +58,4 @@ shadowJar {
     manifest {
         attributes(["Multi-Release": true])
     }
-  outputs.upToDateWhen { false }
 }

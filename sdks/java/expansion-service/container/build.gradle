@@ -21,26 +21,24 @@ plugins {
     id 'com.github.jk1.dependency-license-report' version '1.16'
 }
 
+applyJavaNature(
+  exportJavadoc: false,
+  publish: false,
+  requireJavaVersion: JavaVersion.VERSION_11,
+  shadowClosure: {}
+)
 applyDockerNature()
 applyGoNature()
 
-evaluationDependsOn(":sdks:java:extensions:schemaio-expansion-service")
-evaluationDependsOn(":sdks:java:io:expansion-service")
-evaluationDependsOn(":sdks:java:io:google-cloud-platform:expansion-service")
+// reset resolution strategy set by applyJavaNature to allow pinned dependencies in dependent expansion services honored
+project.configurations.runtimeClasspath.resolutionStrategy.forcedModules = []
 
 description = "Apache Beam :: SDKs :: Java :: Expansion-service :: Container"
 
-configurations {
-    dockerDependency
-    expansionServiceLauncher
-}
-
 dependencies {
-    // TODO(https://github.com/apache/beam/issues/34098) remove when Beam moved to avro 1.12
-    dockerDependency "org.apache.avro:avro:1.12.0"
-    dockerDependency project(path: ":sdks:java:extensions:schemaio-expansion-service", configuration: "shadow")
-    dockerDependency project(path: ":sdks:java:io:expansion-service", configuration: "shadow")
-    dockerDependency project(path: ":sdks:java:io:google-cloud-platform:expansion-service", configuration: "shadow")
+    runtimeOnly project(path: ":sdks:java:extensions:schemaio-expansion-service", configuration: "default")
+    runtimeOnly project(path: ":sdks:java:io:expansion-service", configuration: "default")
+    runtimeOnly project(path: ":sdks:java:io:google-cloud-platform:expansion-service", configuration: "default")
 }
 
 goBuild {
@@ -48,14 +46,16 @@ goBuild {
     outputLocation = './build/target/launcher/${GOOS}_${GOARCH}/boot'
 }
 
+shadowJar {
+  manifest {
+    attributes(["Multi-Release": true])
+  }
+}
+
 task copyDockerfileDependencies(type: Copy) {
-    from configurations.dockerDependency
-    // TODO(https://github.com/apache/beam/issues/34098) remove when Beam moved to avro 1.12
-    rename 'avro-.*.jar', 'avro.jar'
-    rename 'beam-sdks-java-extensions-schemaio-expansion-service-.*.jar', 'beam-sdks-java-extensions-schemaio-expansion-service.jar'
-    rename 'beam-sdks-java-io-expansion-service-.*.jar', 'beam-sdks-java-io-expansion-service.jar'
-    rename 'beam-sdks-java-io-google-cloud-platform-expansion-service-.*.jar', 'beam-sdks-java-io-google-cloud-platform-expansion-service.jar'
-    setDuplicatesStrategy(DuplicatesStrategy.INCLUDE)
+    dependsOn tasks.shadowJar
+    from tasks.shadowJar.outputs.files
+    rename 'beam-sdks-java-expansion-service-container.*.jar', 'beam-sdks-java-expansion-service-container.jar'
     into "build/target"
 }
 
