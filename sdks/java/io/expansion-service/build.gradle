@@ -51,6 +51,12 @@ configurations.runtimeClasspath {
   }
 }
 
+configurations {
+  consumable('unshade') {
+    extendsFrom(runtimeClasspath)
+  }
+}
+
 shadowJar {
   manifest {
     attributes(["Multi-Release": true])

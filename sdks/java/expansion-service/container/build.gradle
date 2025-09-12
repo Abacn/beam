@@ -17,9 +17,11 @@
  */
 
 plugins {
+    id 'application'
     id 'org.apache.beam.module'
     id 'com.github.jk1.dependency-license-report' version '1.16'
 }
+mainClassName = "org.apache.beam.sdk.expansion.service.ExpansionService"
 
 applyJavaNature(
   exportJavadoc: false,
@@ -36,9 +38,9 @@ project.configurations.runtimeClasspath.resolutionStrategy.forcedModules = []
 description = "Apache Beam :: SDKs :: Java :: Expansion-service :: Container"
 
 dependencies {
-    runtimeOnly project(path: ":sdks:java:extensions:schemaio-expansion-service", configuration: "default")
-    runtimeOnly project(path: ":sdks:java:io:expansion-service", configuration: "default")
-    runtimeOnly project(path: ":sdks:java:io:google-cloud-platform:expansion-service", configuration: "default")
+    // runtimeOnly project(path: ":sdks:java:extensions:schemaio-expansion-service", configuration: "default")
+    runtimeOnly project(path: ":sdks:java:io:expansion-service", configuration: "unshade")
+    // runtimeOnly project(path: ":sdks:java:io:google-cloud-platform:expansion-service", configuration: "default")
 }
 
 goBuild {
