@@ -231,7 +231,7 @@ jobs:
         py_version: ["cp310-", "cp311-", "cp312-", "cp313-"]
         # The following exclude/include skips intermediate Python versions on GitHub hosted runners for PR run
         is_pr:
-          - ${{ github.event_name == 'pull_request' }}
+          - ${{ github.event_name != 'pull_request' }}
         exclude:
           - is_pr: true
         include:
