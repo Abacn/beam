@@ -26,6 +26,7 @@ from apache_beam.testing.test_pipeline import TestPipeline
 from apache_beam.testing.util import assert_that
 from apache_beam.testing.util import equal_to
 from apache_beam.typehints import row_type
+from apache_beam.typehints import schemas
 
 
 class RowTypeTest(unittest.TestCase):
@@ -84,6 +85,38 @@ class RowTypeTest(unittest.TestCase):
           | 'GBK' >> beam.GroupByKey()
           | 'Count Elements' >> beam.Map(self._check_key_type_and_count))
       assert_that(result, equal_to([10] * 100))
+
+  def test_derived_dataclass_schema_id(self):
+    @dataclass
+    class BaseDataClass:
+      id: int
+
+    @dataclass
+    class DerivedDataClass(BaseDataClass):
+      name: str
+
+    self.assertFalse(hasattr(BaseDataClass, row_type._BEAM_SCHEMA_ID))
+    schema_for_base = schemas.schema_from_element_type(BaseDataClass)
+    self.assertTrue(hasattr(BaseDataClass, row_type._BEAM_SCHEMA_ID))
+    self.assertEqual(
+        schema_for_base.id, getattr(BaseDataClass, row_type._BEAM_SCHEMA_ID))
+
+    # Getting the schema for BaseDataClass sets the _beam_schema_id
+    schemas.typing_to_runner_api(
+        BaseDataClass, schema_registry=schemas.SchemaTypeRegistry())
+
+    # We create a RowTypeConstraint from DerivedDataClass.
+    # It should not inherit the _beam_schema_id from BaseDataClass!
+    derived_row_type = row_type.RowTypeConstraint.from_user_type(
+        DerivedDataClass)
+    self.assertIsNone(derived_row_type._schema_id)
+
+    schema_for_derived = schemas.schema_from_element_type(DerivedDataClass)
+    self.assertTrue(hasattr(DerivedDataClass, row_type._BEAM_SCHEMA_ID))
+    self.assertEqual(
+        schema_for_derived.id,
+        getattr(DerivedDataClass, row_type._BEAM_SCHEMA_ID))
+    self.assertNotEqual(schema_for_derived.id, schema_for_base.id)
 
 
 if __name__ == '__main__':

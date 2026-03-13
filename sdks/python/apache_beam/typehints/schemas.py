@@ -96,7 +96,7 @@ from apache_beam.typehints.native_type_compatibility import _match_is_optional
 from apache_beam.typehints.native_type_compatibility import _safe_issubclass
 from apache_beam.typehints.native_type_compatibility import convert_to_python_type
 from apache_beam.typehints.native_type_compatibility import extract_optional_type
-from apache_beam.typehints.native_type_compatibility import match_is_dataclass
+from apache_beam.typehints.native_type_compatibility import match_dataclass_for_row
 from apache_beam.typehints.native_type_compatibility import match_is_named_tuple
 from apache_beam.typehints.schema_registry import SCHEMA_REGISTRY
 from apache_beam.typehints.schema_registry import SchemaTypeRegistry
@@ -335,9 +335,11 @@ class SchemaTranslation(object):
                   atomic_type=PRIMITIVE_TO_ATOMIC_TYPE[int])))
 
     elif _safe_issubclass(type_, Sequence) and not _safe_issubclass(type_, str):
-      element_type = self.typing_to_runner_api(_get_args(type_)[0])
-      return schema_pb2.FieldType(
-          array_type=schema_pb2.ArrayType(element_type=element_type))
+      arg_types = _get_args(type_)
+      if len(arg_types) > 0:
+        element_type = self.typing_to_runner_api(arg_types[0])
+        return schema_pb2.FieldType(
+            array_type=schema_pb2.ArrayType(element_type=element_type))
 
     elif _safe_issubclass(type_, Mapping):
       key_type, value_type = map(self.typing_to_runner_api, _get_args(type_))
@@ -345,9 +347,11 @@ class SchemaTranslation(object):
           map_type=schema_pb2.MapType(key_type=key_type, value_type=value_type))
 
     elif _safe_issubclass(type_, Iterable) and not _safe_issubclass(type_, str):
-      element_type = self.typing_to_runner_api(_get_args(type_)[0])
-      return schema_pb2.FieldType(
-          array_type=schema_pb2.ArrayType(element_type=element_type))
+      arg_types = _get_args(type_)
+      if len(arg_types) > 0:
+        element_type = self.typing_to_runner_api(arg_types[0])
+        return schema_pb2.FieldType(
+            array_type=schema_pb2.ArrayType(element_type=element_type))
 
     try:
       if LogicalType.is_known_logical_type(type_):
@@ -630,8 +634,10 @@ def schema_from_element_type(element_type: type) -> schema_pb2.Schema:
   Returns schema as a list of (name, python_type) tuples"""
   if isinstance(element_type, row_type.RowTypeConstraint):
     return named_fields_to_schema(element_type._fields)
-  elif match_is_named_tuple(element_type) or match_is_dataclass(element_type):
-    if hasattr(element_type, row_type._BEAM_SCHEMA_ID):
+  elif match_is_named_tuple(element_type) or match_dataclass_for_row(
+      element_type):
+    # schema id does not inherit from base classes
+    if row_type._BEAM_SCHEMA_ID in element_type.__dict__:
       # if the named tuple's schema is in registry, we just use it instead of
       # regenerating one.
       schema_id = getattr(element_type, row_type._BEAM_SCHEMA_ID)
