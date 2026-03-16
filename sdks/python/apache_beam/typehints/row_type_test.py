@@ -110,7 +110,7 @@ class RowTypeTest(unittest.TestCase):
 
   # Union of dataclasses as type hint currently result in FastPrimitiveCoder
   # fails at GBK
-  @unittest.skip("https://github.com/apache/beam/issues/22085")
+  # @unittest.skip("https://github.com/apache/beam/issues/22085")
   def test_group_by_key_inherited_dataclass_union(self):
     @dataclass
     class DataClassInt:

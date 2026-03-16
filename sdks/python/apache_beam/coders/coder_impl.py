@@ -1558,7 +1558,7 @@ class _OrderedUnionCoderImpl(StreamCoderImpl):
         break
     else:
       if self._fallback_coder_impl is None:
-        raise ValueError("No fallback.")
+        raise ValueError(f"No fallback: {value_t}")
       out.write_byte(0xFF)
       self._fallback_coder_impl.encode_to_stream(value, out, nested)
 

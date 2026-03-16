@@ -157,6 +157,19 @@ class CoderRegistry(object):
         return coders.ListCoder.from_type_hint(typehint, self)
       elif typehints.is_nullable(typehint):
         return coders.NullableCoder.from_type_hint(typehint, self)
+      elif isinstance(typehint, typehints.UnionConstraint):
+        # For coder compatibility, only use OrderedUnionCoder if
+        # all components are registered with coder
+        type_coder = []
+        for t in typehint.union_types:
+          if t in self._coders:
+            type_coder.append((t, self._coders[t].from_type_hint(t, self)))
+          else:
+            type_coder = []
+            break
+        if type_coder:
+          print(type_coder)
+          return coders._OrderedUnionCoder(*type_coder, fallback_coder=None)
       elif typehint is None:
         # In some old code, None is used for Any.
         # TODO(robertwb): Clean this up.
