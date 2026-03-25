@@ -27,6 +27,7 @@ public enum Connectors {
   SQLSERVER("SQLServer", "io.debezium.connector.sqlserver.SqlServerConnector"),
   ORACLE("Oracle", "io.debezium.connector.oracle.OracleConnector"),
   DB2("DB2", "io.debezium.connector.db2.Db2Connector"),
+  MONGODB("MongoDB", "io.debezium.connector.mongodb.MongoDbConnector"),
   ;
   private final String name;
   private final String connector;
