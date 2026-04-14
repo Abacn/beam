@@ -565,7 +565,8 @@ public class BeamCalcRel extends AbstractBeamCalcRel {
           value = Expressions.call(expression, "getIterable", fieldName);
           break;
         case LOGICAL_TYPE:
-          String identifier = fieldType.getLogicalType().getIdentifier();
+          LogicalType logicalType = fieldType.getLogicalType();
+          String identifier = logicalType.getIdentifier();
           if (FixedString.IDENTIFIER.equals(identifier)
               || VariableString.IDENTIFIER.equals(identifier)) {
             value = Expressions.call(expression, "getString", fieldName);
@@ -603,6 +604,9 @@ public class BeamCalcRel extends AbstractBeamCalcRel {
                     LocalDateTime.class);
           } else if (FixedPrecisionNumeric.IDENTIFIER.equals(identifier)) {
             value = Expressions.call(expression, "getDecimal", fieldName);
+          } else if (logicalType instanceof PassThroughLogicalType
+              && FieldType.BYTES.equals(logicalType.getBaseType())) {
+            value = Expressions.call(expression, "getBytes", fieldName);
           } else {
             throw new UnsupportedOperationException("Unable to get logical type " + identifier);
           }
@@ -651,7 +655,8 @@ public class BeamCalcRel extends AbstractBeamCalcRel {
         case ROW:
           return nullOr(value, toCalciteRow(value, fieldType.getRowSchema()));
         case LOGICAL_TYPE:
-          String identifier = fieldType.getLogicalType().getIdentifier();
+          LogicalType logicalType = fieldType.getLogicalType();
+          String identifier = logicalType.getIdentifier();
           if (FixedString.IDENTIFIER.equals(identifier)
               || VariableString.IDENTIFIER.equals(identifier)) {
             return Expressions.convert_(value, String.class);
@@ -692,6 +697,9 @@ public class BeamCalcRel extends AbstractBeamCalcRel {
             return nullOr(value, returnValue);
           } else if (FixedPrecisionNumeric.IDENTIFIER.equals(identifier)) {
             return Expressions.convert_(value, BigDecimal.class);
+          } else if (logicalType instanceof PassThroughLogicalType
+              && FieldType.BYTES.equals(logicalType.getBaseType())) {
+            return Expressions.convert_(value, byte[].class);
           } else {
             throw new UnsupportedOperationException("Unable to convert logical type " + identifier);
           }

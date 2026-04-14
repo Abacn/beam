@@ -490,10 +490,18 @@ public class SchemaTranslation {
         }
         // assemble an UnknownLogicalType
         @Nullable FieldType argumentType = null;
+        @Nullable FieldType representation = null;
         @Nullable Object argumentValue = null;
         if (logicalType.hasArgumentType()) {
           argumentType = fieldTypeFromProto(logicalType.getArgumentType());
           argumentValue = fieldValueFromProto(argumentType, logicalType.getArgument());
+        }
+        if (logicalType.hasRepresentation()) {
+          representation = fieldTypeFromProto(logicalType.getRepresentation());
+        } else {
+          // Translate logical type without representation as bytes,
+          // as field coder are nested thus length-prefixed, compatible with bytes coder
+          representation = FieldType.BYTES;
         }
         return FieldType.logicalType(
             new UnknownLogicalType(
@@ -501,7 +509,7 @@ public class SchemaTranslation {
                 logicalType.getPayload().toByteArray(),
                 argumentType,
                 argumentValue,
-                fieldTypeFromProto(logicalType.getRepresentation())));
+                representation));
       default:
         throw new IllegalArgumentException(
             "Unexpected type_info: " + protoFieldType.getTypeInfoCase());

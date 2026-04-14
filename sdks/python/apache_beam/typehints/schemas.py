@@ -361,9 +361,12 @@ class SchemaTranslation(object):
         logical_type = LogicalType.from_typing(type_)
     except ValueError:
       # Unknown type, just treat it like Any
-      return schema_pb2.FieldType(
+      x = schema_pb2.FieldType(
           logical_type=schema_pb2.LogicalType(urn=PYTHON_ANY_URN),
           nullable=True)
+      print(x)
+      print(x.WhichOneof("type_info"))
+      return x
     else:
       argument_type = None
       argument = None
