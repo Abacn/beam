@@ -340,12 +340,22 @@ func launchSDKProcess() error {
 					// DoFns throwing exceptions.
 					errorCount += 1
 					bufLogger.FlushAtError(ctx)
+					maybeCode := ""
+					if exitErr, ok := err.(*exec.ExitError); ok {
+						exitCode := exitErr.ExitCode()
+						if exitCode == 137 {
+							// OOM
+							logger.Errorf(ctx, "Detected Python exited with code %v, likely oom, exiting", exitCode)
+							os.Exit(132)
+						}
+                    	maybeCode = fmt.Sprintf(" (code %v)", exitCode)
+                	}
 					if errorCount < 4 {
-						logger.Warnf(ctx, "Python (worker %v) exited %v times: %v\nrestarting SDK process",
-							workerId, errorCount, err)
+						logger.Warnf(ctx, "Python (worker %v) exited%v %v times: %v\nrestarting SDK process",
+							workerId, maybeCode, errorCount, err)
 					} else {
-						logger.Fatalf(ctx, "Python (worker %v) exited %v times: %v\nout of retries, failing container",
-							workerId, errorCount, err)
+						logger.Fatalf(ctx, "Python (worker %v) exited%v %v times: %v\nout of retries, failing container",
+							workerId, maybeCode, errorCount, err)
 					}
 				} else {
 					bufLogger.FlushAtDebug(ctx)
