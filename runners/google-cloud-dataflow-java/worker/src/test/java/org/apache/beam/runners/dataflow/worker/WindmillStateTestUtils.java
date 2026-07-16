@@ -23,6 +23,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 /** Static helpers for testing Windmill state. */
 public class WindmillStateTestUtils {
@@ -56,7 +58,36 @@ public class WindmillStateTestUtils {
           path.remove(path.size() - 1);
         }
       }
+    } else if (obj instanceof AtomicReferenceArray) {
+      AtomicReferenceArray<?> arr = (AtomicReferenceArray<?>) obj;
+      for (int i = 0; i < arr.length(); i++) {
+        try {
+          path.add(thisClazz.getName() + "[" + i + "]");
+          assertNoReference(arr.get(i), clazz, path, visited);
+        } finally {
+          path.remove(path.size() - 1);
+        }
+      }
+    } else if (obj instanceof java.util.concurrent.ConcurrentLinkedQueue) {
+      int i = 0;
+      for (Object o : (ConcurrentLinkedQueue<?>) obj) {
+        try {
+          path.add(thisClazz.getName() + "[" + i + "]");
+          assertNoReference(o, clazz, path, visited);
+        } finally {
+          path.remove(path.size() - 1);
+        }
+        ++i;
+      }
+    } else if ((obj instanceof Number)
+        || (obj instanceof String)
+        || (obj instanceof Boolean)
+        || (obj instanceof Enum)
+        || (obj instanceof java.util.concurrent.locks.Lock)) {
+      // Skip primitives
+      return;
     } else {
+      System.out.println("Checking " + thisClazz.getName());
       Class<?> currClazz = thisClazz;
       while (currClazz != null) {
         for (Field f : currClazz.getDeclaredFields()) {
