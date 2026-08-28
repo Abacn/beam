@@ -37,7 +37,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GCP_PATH: "gs://${{ secrets.GCP_PYTHON_WHEELS_BUCKET }}/${GITHUB_REF##*/}/${GITHUB_SHA}-${GITHUB_RUN_ID}/"
+  # Use github.* context; workflow env is not bash-evaluated.
+  GCP_PATH: "gs://${{ secrets.GCP_PYTHON_WHEELS_BUCKET }}/${{ github.ref_name }}/${{ github.sha }}-${{ github.run_id }}/"
 
 
 jobs:
@@ -57,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          persist-credentials: true
       - name: "Check are GCP variables set"
         run: "./scripts/ci/ci_check_are_gcp_variables_set.sh"
         id: check_gcp_variables
@@ -92,9 +93,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          persist-credentials: true
       - name: Install python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.11'
       - name: Get tag
@@ -200,7 +201,7 @@ jobs:
     if: needs.check_env_variables.outputs.gcp-variables-set == 'true' && github.event_name != 'pull_request'
     steps:
       - name: Remove existing files on GCS bucket
-        run: gsutil rm -r ${GCP_PATH} || true
+        run: gcloud storage rm -r ${GCP_PATH} || true
 
   upload_source_to_gcs:
     name: Upload python source distribution to GCS bucket
@@ -216,7 +217,7 @@ jobs:
           name: source_zip
           path: source/
       - name: Copy sources to GCS bucket
-        run: gsutil cp -r -a public-read source/* ${GCP_PATH}
+        run: gcloud storage cp -r --predefined-acl=publicRead source/* ${GCP_PATH}
 
   build_wheels:
     name: Build python ${{matrix.py_version}} wheels on ${{matrix.os_python.arch}} for ${{ matrix.os_python.os }}
@@ -251,7 +252,7 @@ jobs:
         name: source_rc${{ needs.build_source.outputs.rc_num }}
         path: apache-beam-source-rc
     - name: Install Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v7
       with:
         python-version: '3.11'
     - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8
@@ -329,7 +330,7 @@ jobs:
         merge-multiple: true
         path: wheelhouse/
     - name: Copy wheels to GCS bucket
-      run: gsutil cp -r -a public-read wheelhouse/* ${GCP_PATH}
+      run: gcloud storage cp -r --predefined-acl=publicRead wheelhouse/* ${GCP_PATH}
     - name: Create github action information file on GCS bucket
       run: |
         cat > github_action_info <<EOF
@@ -347,9 +348,9 @@ jobs:
         GITHUB_BASE_REF=$GITHUB_BASE_REF
         EOF
         echo $(cat github_action_info)
-        gsutil cp -a public-read github_action_info ${GCP_PATH}
+        gcloud storage cp --predefined-acl=publicRead github_action_info ${GCP_PATH}
     - name: Upload GitHub event file to GCS bucket
-      run: gsutil cp -a public-read ${GITHUB_EVENT_PATH} ${GCP_PATH}
+      run: gcloud storage cp --predefined-acl=publicRead ${GITHUB_EVENT_PATH} ${GCP_PATH}
 
   list_files_on_gcs:
     name: List files on Google Cloud Storage Bucket
@@ -360,7 +361,7 @@ jobs:
     if: needs.check_env_variables.outputs.gcp-variables-set == 'true' && github.event_name != 'pull_request'
     steps:
     - name: List file on Google Cloud Storage Bucket
-      run: gsutil ls "${GCP_PATH}*"
+      run: gcloud storage ls "${GCP_PATH}*"
 
   branch_repo_nightly:
     permissions:
@@ -376,7 +377,7 @@ jobs:
       - name: Checkout code on master branch
         uses: actions/checkout@v7
         with:
-          persist-credentials: false
+          persist-credentials: true
           submodules: recursive
       - name: Branch commit
         run: |

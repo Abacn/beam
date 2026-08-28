@@ -608,14 +608,14 @@ class BeamModulePlugin implements Plugin<Project> {
     //
     // There are a few versions are determined by the BOMs by running scripts/tools/bomupgrader.py
     // marked as [bomupgrader]. See the documentation of that script for detail.
-    def activemq_version = "5.19.2"
+    def activemq_version = "5.19.5"
     def autovalue_version = "1.9"
     def autoservice_version = "1.0.1"
     def aws_java_sdk2_version = "2.20.162"
     def cassandra_driver_version = "3.10.2"
-    def cdap_version = "6.5.1"
+    def cdap_version = "6.11.4"
     def checkerframework_version = "3.42.0"
-    def classgraph_version = "4.8.162"
+    def classgraph_version = "4.8.192"
     def delta_lake_version = "4.2.0"
     def dbcp2_version = "2.9.0"
     def errorprone_version = "2.31.0"
@@ -639,7 +639,7 @@ class BeamModulePlugin implements Plugin<Project> {
     def jaxb_api_version = "2.3.3"
     def jsr305_version = "3.0.2"
     def everit_json_version = "1.14.2"
-    def kafka_version = "2.4.1"
+    def kafka_version = "3.9.2"
     def log4j2_version = "2.25.4"
     def nemo_version = "0.1"
     // [bomupgrader] determined by: io.grpc:grpc-netty, consistent with: google_cloud_platform_libraries_bom
@@ -812,6 +812,7 @@ class BeamModulePlugin implements Plugin<Project> {
         guava                                       : "com.google.guava:guava:$guava_version",
         guava_testlib                               : "com.google.guava:guava-testlib:$guava_version",
         hadoop_auth                                 : "org.apache.hadoop:hadoop-auth:$hadoop_version",
+        hadoop_aws                                  : "org.apache.hadoop:hadoop-aws:$hadoop_version",
         hadoop_client                               : "org.apache.hadoop:hadoop-client:$hadoop_version",
         hadoop_common                               : "org.apache.hadoop:hadoop-common:$hadoop_version",
         hadoop_mapreduce_client_core                : "org.apache.hadoop:hadoop-mapreduce-client-core:$hadoop_version",
@@ -850,8 +851,10 @@ class BeamModulePlugin implements Plugin<Project> {
         jupiter_api                                 : "org.junit.jupiter:junit-jupiter-api:$jupiter_version",
         jupiter_engine                              : "org.junit.jupiter:junit-jupiter-engine:$jupiter_version",
         jupiter_params                              : "org.junit.jupiter:junit-jupiter-params:$jupiter_version",
-        kafka                                       : "org.apache.kafka:kafka_2.11:$kafka_version",
+        kafka_scala_2_12                            : "org.apache.kafka:kafka_2.12:$kafka_version",
+        kafka_scala_2_13                            : "org.apache.kafka:kafka_2.13:$kafka_version",
         kafka_clients                               : "org.apache.kafka:kafka-clients:$kafka_version",
+        kafka_server                                : "org.apache.kafka:kafka-server:$kafka_version",
         log4j                                       : "log4j:log4j:1.2.17",
         log4j_over_slf4j                            : "org.slf4j:log4j-over-slf4j:$slf4j_version",
         log4j2_api                                  : "org.apache.logging.log4j:log4j-api:$log4j2_version",
@@ -877,6 +880,7 @@ class BeamModulePlugin implements Plugin<Project> {
         opentelemetry_context                       : "io.opentelemetry:opentelemetry-context:$opentelemetry_version", // Set version explicitly as it's standalone runtime dep for Beam modules
         opentelemetry_gcp_auth                      : "io.opentelemetry.contrib:opentelemetry-gcp-auth-extension:$opentelemetry_contrib_version-alpha",
         opentelemetry_sdk                           : "io.opentelemetry:opentelemetry-sdk", // opentelemetry-bom sets version
+        opentelemetry_sdk_testing                   : "io.opentelemetry:opentelemetry-sdk-testing", // opentelemetry-bom sets version
         opentelemetry_exporter_otlp                 : "io.opentelemetry:opentelemetry-exporter-otlp", // opentelemetry-bom sets version
         opentelemetry_extension_autoconfigure       : "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure", // opentelemetry-bom sets version
         opentelemetry_proto                         : "io.opentelemetry.proto:opentelemetry-proto:$opentelemetry_version-alpha",
@@ -949,6 +953,7 @@ class BeamModulePlugin implements Plugin<Project> {
         arrow_vector                                : "org.apache.arrow:arrow-vector:$arrow_version",
         arrow_memory_core                           : "org.apache.arrow:arrow-memory-core:$arrow_version",
         arrow_memory_netty                          : "org.apache.arrow:arrow-memory-netty:$arrow_version",
+        arrow_flight_core                           : "org.apache.arrow:flight-core:$arrow_version",
       ],
       groovy: [
         groovy_all: "org.codehaus.groovy:groovy-all:2.4.13",
@@ -1254,20 +1259,26 @@ class BeamModulePlugin implements Plugin<Project> {
         maxHeapSize = '2g'
       }
 
+      // NOTE: Use the character class "[.]" instead of an escaped "\\." to match a literal dot in
+      // these Checker Framework -AskipDefs/-AskipUses regexes. When a module is compiled on an older
+      // host JDK and forked to a newer JDK via javaXXHome (e.g. iceberg's requireJavaVersion 17 on a
+      // Java 11 CI host), Gradle passes the javac arguments through an @argfile. Backslash escapes do
+      // not survive that round-trip intact, so "\\." becomes a literal-backslash regex that matches
+      // nothing and the suppression is silently dropped. "[.]" is backslash-free and survives.
       List<String> skipDefRegexes = []
       skipDefRegexes << "AutoValue_.*"
       skipDefRegexes << "AutoBuilder_.*"
       skipDefRegexes << "AutoOneOf_.*"
-      skipDefRegexes << ".*\\.jmh_generated\\..*"
+      skipDefRegexes << ".*[.]jmh_generated[.].*"
       skipDefRegexes += configuration.generatedClassPatterns
       skipDefRegexes += configuration.classesTriggerCheckerBugs.keySet()
       String skipDefCombinedRegex = skipDefRegexes.collect({ regex -> "(${regex})"}).join("|")
 
       List<String> skipUsesRegexes = []
       // zstd-jni is not annotated, handles Zstd(De)CompressCtx.loadDict(null) just fine
-      skipUsesRegexes << "^com\\.github\\.luben\\.zstd\\..*"
+      skipUsesRegexes << "^com[.]github[.]luben[.]zstd[.].*"
       // SLF4J logger handles null log message parameters
-      skipUsesRegexes << "^org\\.slf4j\\.Logger.*"
+      skipUsesRegexes << "^org[.]slf4j[.]Logger.*"
       String skipUsesCombinedRegex = skipUsesRegexes.collect({ regex -> "(${regex})"}).join("|")
 
       project.apply plugin: 'org.checkerframework'

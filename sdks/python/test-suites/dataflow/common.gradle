@@ -146,7 +146,13 @@ task postCommitIT {
 task postCommitArmIT {
   def pyversion = "${project.ext.pythonVersion.replace('.', '')}"
   dependsOn 'initializeForDataflowJob'
-  dependsOn ":sdks:python:container:py${pyversion}:docker"
+  // When -PusePrebuiltSdkContainer is set, skip building/pushing a multiarch
+  // SDK image and use SDK_CONTAINER_IMAGE from the environment instead (e.g.
+  // gcr.io/apache-beam-testing/beam-sdk/beam_python3.x_sdk:latest from Snapshots).
+  def usePrebuiltSdkContainer = project.rootProject.hasProperty(['usePrebuiltSdkContainer'])
+  if (!usePrebuiltSdkContainer) {
+    dependsOn ":sdks:python:container:py${pyversion}:docker"
+  }
 
   doLast {
     def testOpts = basicPytestOpts + ["--numprocesses=8", "--dist=loadfile"]
@@ -586,10 +592,12 @@ task anthropicInferenceTest {
 task installTFTRequirements {
   dependsOn 'initializeForDataflowJob'
   doLast {
+    // Keep the SDK under test: TFT requirements can pull a different Beam from PyPI.
+    def sdk = project.ext.sdkLocation
     exec {
       workingDir "$rootProject.projectDir/sdks/python/apache_beam/testing/benchmarks/cloudml/"
       executable 'sh'
-      args '-c', ". ${envdir}/bin/activate && pip install -r requirements.txt"
+      args '-c', ". ${envdir}/bin/activate && pip install -r requirements.txt && pip install --force-reinstall --no-deps '${sdk}[gcp]'"
     }
   }
 }
@@ -601,6 +609,8 @@ task tftTests {
   doLast {
     def opts = project.findProperty('opts')
     opts += " --sdk_location=${project.ext.sdkLocation}"
+    // Reinstall the staged SDK after requirements on workers (runs after requirements install).
+    opts += " --extra_package=${project.ext.sdkLocation}"
     def testOpts = basicPytestOpts + ["--numprocesses=8", "--dist=loadfile"]
     def argMap = [
         "test_opts": testOpts,
@@ -665,6 +675,8 @@ project.tasks.register("inferencePostCommitITPy312") {
 // Create cross-language tasks for running tests against Java expansion service(s)
 def gcpProject = project.findProperty('gcpProject') ?: 'apache-beam-testing'
 def gcpRegion = project.findProperty('gcpRegion') ?: 'us-central1'
+// Default to the minimum required Java version (currently bounded by IcebergIO which needs Java 17+)
+def javaHarnessVersion = project.findProperty('testJavaVersion') ?: '17'
 
 project(":sdks:python:test-suites:xlang").ext.xlangTasks.each { taskMetadata ->
     createCrossLanguageUsingJavaExpansionTask(
@@ -676,7 +688,7 @@ project(":sdks:python:test-suites:xlang").ext.xlangTasks.each { taskMetadata ->
         "--project=${gcpProject}",
         "--region=${gcpRegion}",
         "--sdk_container_image=gcr.io/apache-beam-testing/beam-sdk/beam_python${project.ext.pythonVersion}_sdk:latest",
-        "--sdk_harness_container_image_overrides=.*java.*,gcr.io/apache-beam-testing/beam-sdk/beam_java11_sdk:latest"
+        "--sdk_harness_container_image_overrides=.*java.*,gcr.io/apache-beam-testing/beam-sdk/beam_java${javaHarnessVersion}_sdk:latest"
       ],
       pytestOptions: basicPytestOpts,
       additionalDeps: taskMetadata.additionalDeps,
