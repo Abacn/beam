@@ -232,7 +232,8 @@ def portableValidatesRunnerTask(String name, boolean streaming, boolean docker, 
                   "beam.spark.test.reuseSparkContext": "false",
                   "spark.ui.enabled": "false",
                   "spark.ui.showConsoleProgress": "false",
-                  'org.xerial.snappy.tempdir': /C:\Users\huuyy\Documents\GitHub\beam\build/,
+                  'org.xerial.snappy.tempdir': "${rootDir.absolutePath}\\build", // needed on Windows
+				  'hadoop.home.dir': "${rootDir.absolutePath}\\build\\hadoop-home", // download winutils here, see https://cwiki.apache.org/confluence/spaces/HADOOP2/pages/120730292/WindowsProblems
           ],
           testCategories: testCategories,
           testFilter: testFilter,

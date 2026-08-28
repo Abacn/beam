@@ -420,10 +420,10 @@ public class ArtifactStagingService
               ByteString chunk = responseWrapper.getGetArtifactResponse().getData();
               if (chunk.size() > 0) { // Make sure we don't accidentally send the EOF value.
                 totalPendingBytes.aquire(chunk.size());
-                putChunk(chunk);
+                currentOutput.put(chunk);
               }
               if (responseWrapper.getIsLast()) {
-                putChunk(ByteString.EMPTY); // The EOF value.
+                currentOutput.put(ByteString.EMPTY); // The EOF value.
                 if (pendingGets.isEmpty()) {
                   resolveNextEnvironment(responseObserver);
                 } else {
@@ -434,12 +434,10 @@ public class ArtifactStagingService
             } catch (Exception exn) {
               // The write of a previous chunk failed; surface the failure to the client rather
               // than leaving the stream unterminated, which would make the client block forever.
-              LOG.error("Error staging artifacts", exn);
+			  onError(exn);
               if (exn instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
               }
-              state = State.ERROR;
-              stagingExecutor.shutdownNow();
               responseObserver.onError(
                   Status.INTERNAL
                       .withDescription("Error staging artifacts: " + exn)
@@ -540,8 +538,9 @@ public class ArtifactStagingService
         // all path separators.
         List<String> components = Splitter.onPattern("[^A-Za-z-_.]]").splitToList(path);
         String base = components.get(components.size() - 1);
+		String sanitizedEnvironment = environment.replaceAll("[<>:\"/\\\\|?*]", "_");
         return clip(
-            String.format("%s-%s-%s", idGenerator.getId(), clip(environment, 25), base), 100);
+             String.format("%s-%s-%s", idGenerator.getId(), clip(sanitizedEnvironment, 25), base), 100);
       }
 
       private String clip(String s, int maxLength) {
