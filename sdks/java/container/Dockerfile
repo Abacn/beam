@@ -35,7 +35,7 @@ COPY target/slf4j-api.jar \
      /opt/apache/beam/jars/
 
 # Built jars
-COPY target/open-module-agent.jar target/beam-sdks-java-harness.jar /opt/apache/beam/jars/
+COPY target/open-module-agent.jar target/beam-sdks-java-core.jar target/beam-sdks-java-harness.jar /opt/apache/beam/jars/
 
 # Built binary with licenses
 COPY target/${TARGETOS}_${TARGETARCH}/boot target/LICENSE target/NOTICE /opt/apache/beam/

@@ -138,6 +138,7 @@ func main() {
 	}
 
 	const jarsDir = "/opt/apache/beam/jars"
+	const javaCoreJar = "beam-sdks-java-core.jar"
 	const javaHarnessJar = "beam-sdks-java-harness.jar"
 	defaultLoggingJars := []string{
 		"slf4j-api.jar",
@@ -164,6 +165,7 @@ func main() {
 		// be added to classpath as a normal user jar further below.
 		logger.Printf(ctx, "Opted to use staged java harness. Make sure beam-sdks-java-harness is included or shaded in the staged jars.")
 	} else {
+		cp = append(cp, filepath.Join(jarsDir, javaCoreJar))
 		cp = append(cp, filepath.Join(jarsDir, javaHarnessJar))
 	}
 

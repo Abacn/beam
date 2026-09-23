@@ -53,6 +53,7 @@ task copyDockerfileDependencies(type: Copy) {
     rename 'log4j-over-slf4j.*', 'log4j-over-slf4j.jar'
     rename 'log4j-to-slf4j.*', 'log4j-to-slf4j.jar'
     rename 'beam-sdks-java-container-agent.*.jar', 'open-module-agent.jar'
+    rename 'beam-sdks-java-core-.*.jar', 'beam-sdks-java-core.jar'
     rename 'beam-sdks-java-harness-.*.jar', 'beam-sdks-java-harness.jar'
     rename 'jamm.*.jar', 'jamm.jar'
 
